@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
 import { Plus, Utensils, ShoppingCart, Wallet } from 'lucide-react';
 import AddMealModal from '@/components/AddMealModal';
 import AddExpenseModal from '@/components/AddExpenseModal';
@@ -112,22 +113,32 @@ export default function Dashboard() {
 
             {/* Summary Cards */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
-                    <div className="text-sm font-medium text-muted-foreground">Total Meals</div>
-                    <div className="mt-2 text-3xl font-bold">{data.totalMeals.toFixed(1)}</div>
-                </div>
+                <Link href="/history/meals" className="block transition-transform hover:scale-105">
+                    <div className="rounded-lg border border-border bg-card p-6 shadow-sm h-full cursor-pointer hover:border-primary/50">
+                        <div className="text-sm font-medium text-muted-foreground">Total Meals</div>
+                        <div className="mt-2 text-3xl font-bold">{data.totalMeals.toFixed(1)}</div>
+                    </div>
+                </Link>
+
                 <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
                     <div className="text-sm font-medium text-muted-foreground">Meal Rate</div>
                     <div className="mt-2 text-3xl font-bold">৳{data.mealRate.toFixed(2)}</div>
                 </div>
-                <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
-                    <div className="text-sm font-medium text-muted-foreground">Total Grocery</div>
-                    <div className="mt-2 text-3xl font-bold">৳{data.totalGrocery.toFixed(0)}</div>
-                </div>
-                <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
-                    <div className="text-sm font-medium text-muted-foreground">Total Deposit</div>
-                    <div className="mt-2 text-3xl font-bold">৳{data.totalDeposit.toFixed(0)}</div>
-                </div>
+
+                <Link href="/history/expenses" className="block transition-transform hover:scale-105">
+                    <div className="rounded-lg border border-border bg-card p-6 shadow-sm h-full cursor-pointer hover:border-primary/50">
+                        <div className="text-sm font-medium text-muted-foreground">Total Grocery</div>
+                        <div className="mt-2 text-3xl font-bold">৳{data.totalGrocery.toFixed(0)}</div>
+                    </div>
+                </Link>
+
+                <Link href="/history/deposits" className="block transition-transform hover:scale-105">
+                    <div className="rounded-lg border border-border bg-card p-6 shadow-sm h-full cursor-pointer hover:border-primary/50">
+                        <div className="text-sm font-medium text-muted-foreground">Total Deposit</div>
+                        <div className="mt-2 text-3xl font-bold">৳{data.totalDeposit.toFixed(0)}</div>
+                    </div>
+                </Link>
+
                 <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
                     <div className="text-sm font-medium text-muted-foreground">Balance</div>
                     <div className={`mt-2 text-3xl font-bold ${data.totalBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
