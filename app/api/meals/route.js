@@ -54,3 +54,47 @@ export async function POST(request) {
         return NextResponse.json({ success: false, error: error.message }, { status: 400 });
     }
 }
+
+export async function PUT(request) {
+    await dbConnect();
+    try {
+        const body = await request.json();
+        const { id, ...updateData } = body;
+
+        if (!id) {
+            return NextResponse.json({ success: false, error: 'ID is required' }, { status: 400 });
+        }
+
+        const meal = await Meal.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+
+        if (!meal) {
+            return NextResponse.json({ success: false, error: 'Meal not found' }, { status: 404 });
+        }
+
+        return NextResponse.json({ success: true, data: meal });
+    } catch (error) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+    }
+}
+
+export async function DELETE(request) {
+    await dbConnect();
+    try {
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get('id');
+
+        if (!id) {
+            return NextResponse.json({ success: false, error: 'ID is required' }, { status: 400 });
+        }
+
+        const meal = await Meal.findByIdAndDelete(id);
+
+        if (!meal) {
+            return NextResponse.json({ success: false, error: 'Meal not found' }, { status: 404 });
+        }
+
+        return NextResponse.json({ success: true, data: {} });
+    } catch (error) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+    }
+}

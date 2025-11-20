@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Plus, Utensils, ShoppingCart, Wallet } from 'lucide-react';
+import { Plus, Utensils, ShoppingCart, Wallet, Receipt } from 'lucide-react';
 import AddMealModal from '@/components/AddMealModal';
+import AddGroceryModal from '@/components/AddGroceryModal';
 import AddExpenseModal from '@/components/AddExpenseModal';
 import AddDepositModal from '@/components/AddDepositModal';
 
@@ -12,6 +13,7 @@ export default function Dashboard() {
     const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isMealModalOpen, setIsMealModalOpen] = useState(false);
+    const [isGroceryModalOpen, setIsGroceryModalOpen] = useState(false);
     const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
     const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
 
@@ -48,6 +50,20 @@ export default function Dashboard() {
             fetchData();
         } catch (error) {
             console.error('Error saving meal:', error);
+        }
+    };
+
+    const handleSaveGrocery = async (groceryData) => {
+        try {
+            await fetch('/api/groceries', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...groceryData, month: data.month }),
+            });
+            setIsGroceryModalOpen(false);
+            fetchData();
+        } catch (error) {
+            console.error('Error saving grocery:', error);
         }
     };
 
@@ -97,10 +113,16 @@ export default function Dashboard() {
                         <Utensils className="h-4 w-4" /> Add Meal
                     </button>
                     <button
+                        onClick={() => setIsGroceryModalOpen(true)}
+                        className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+                    >
+                        <ShoppingCart className="h-4 w-4" /> Add Grocery
+                    </button>
+                    <button
                         onClick={() => setIsExpenseModalOpen(true)}
                         className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
                     >
-                        <ShoppingCart className="h-4 w-4" /> Add Expense
+                        <Receipt className="h-4 w-4" /> Add Expense
                     </button>
                     <button
                         onClick={() => setIsDepositModalOpen(true)}
@@ -112,7 +134,7 @@ export default function Dashboard() {
             </div>
 
             {/* Summary Cards */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
                 <Link href="/history/meals" className="block transition-transform hover:scale-105">
                     <div className="rounded-lg border border-border bg-card p-6 shadow-sm h-full cursor-pointer hover:border-primary/50">
                         <div className="text-sm font-medium text-muted-foreground">Total Meals</div>
@@ -125,7 +147,7 @@ export default function Dashboard() {
                     <div className="mt-2 text-3xl font-bold">৳{data.mealRate.toFixed(2)}</div>
                 </div>
 
-                <Link href="/history/expenses" className="block transition-transform hover:scale-105">
+                <Link href="/history/groceries" className="block transition-transform hover:scale-105">
                     <div className="rounded-lg border border-border bg-card p-6 shadow-sm h-full cursor-pointer hover:border-primary/50">
                         <div className="text-sm font-medium text-muted-foreground">Total Grocery</div>
                         <div className="mt-2 text-3xl font-bold">৳{data.totalGrocery.toFixed(0)}</div>
@@ -139,8 +161,15 @@ export default function Dashboard() {
                     </div>
                 </Link>
 
+                <Link href="/history/expenses" className="block transition-transform hover:scale-105">
+                    <div className="rounded-lg border border-border bg-card p-6 shadow-sm h-full cursor-pointer hover:border-primary/50">
+                        <div className="text-sm font-medium text-muted-foreground">Total Expense</div>
+                        <div className="mt-2 text-3xl font-bold">৳{data.totalExpense.toFixed(0)}</div>
+                    </div>
+                </Link>
+
                 <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
-                    <div className="text-sm font-medium text-muted-foreground">Balance</div>
+                    <div className="text-sm font-medium text-muted-foreground">Meal Balance</div>
                     <div className={`mt-2 text-3xl font-bold ${data.totalBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {data.totalBalance >= 0 ? '+' : ''}৳{data.totalBalance.toFixed(0)}
                     </div>
@@ -160,7 +189,7 @@ export default function Dashboard() {
                                 <th className="px-6 py-3 font-medium text-right">Meals</th>
                                 <th className="px-6 py-3 font-medium text-right">Bill</th>
                                 <th className="px-6 py-3 font-medium text-right">Deposit</th>
-                                <th className="px-6 py-3 font-medium text-right">Balance</th>
+                                <th className="px-6 py-3 font-medium text-right">Meal Balance</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
@@ -186,9 +215,15 @@ export default function Dashboard() {
                 members={members}
                 onSave={handleSaveMeal}
             />
+            <AddGroceryModal
+                isOpen={isGroceryModalOpen}
+                onClose={() => setIsGroceryModalOpen(false)}
+                onSave={handleSaveGrocery}
+            />
             <AddExpenseModal
                 isOpen={isExpenseModalOpen}
                 onClose={() => setIsExpenseModalOpen(false)}
+                members={members}
                 onSave={handleSaveExpense}
             />
             <AddDepositModal

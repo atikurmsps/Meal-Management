@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const ExpenseSchema = new mongoose.Schema({
+const GrocerySchema = new mongoose.Schema({
     description: {
         type: String,
         required: [true, 'Please provide a description.'],
@@ -13,16 +13,11 @@ const ExpenseSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
-    paidBy: {
+    addedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Member',
-        required: true,
+        required: false, // Optional if generic admin adds it
     },
-    splitAmong: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Member',
-        required: true,
-    }],
     note: {
         type: String,
     },
@@ -32,4 +27,4 @@ const ExpenseSchema = new mongoose.Schema({
     },
 });
 
-export default mongoose.models.Expense || mongoose.model('Expense', ExpenseSchema);
+export default mongoose.models.Grocery || mongoose.model('Grocery', GrocerySchema);

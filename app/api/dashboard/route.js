@@ -1,6 +1,7 @@
 import dbConnect from '@/lib/db';
 import Member from '@/models/Member';
 import Meal from '@/models/Meal';
+import Grocery from '@/models/Grocery';
 import Expense from '@/models/Expense';
 import Deposit from '@/models/Deposit';
 import Settings from '@/models/Settings';
@@ -21,14 +22,17 @@ export async function GET(request) {
         const members = await Member.find({ active: true });
 
         // 2. Get totals
-        const expenses = await Expense.find({ month });
-        const totalGrocery = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+        const groceries = await Grocery.find({ month });
+        const totalGrocery = groceries.reduce((sum, exp) => sum + exp.amount, 0);
 
         const meals = await Meal.find({ month });
         const totalMeals = meals.reduce((sum, meal) => sum + meal.count, 0);
 
         const deposits = await Deposit.find({ month });
         const totalDeposit = deposits.reduce((sum, dep) => sum + dep.amount, 0);
+
+        const expenses = await Expense.find({ month });
+        const totalExpense = expenses.reduce((sum, exp) => sum + exp.amount, 0);
 
         // 3. Calculate Meal Rate
         const mealRate = totalMeals > 0 ? totalGrocery / totalMeals : 0;
@@ -46,15 +50,20 @@ export async function GET(request) {
                 .filter(d => d.memberId.toString() === member._id.toString())
                 .reduce((sum, d) => sum + d.amount, 0);
 
-            const bill = memberMeals * mealRate;
-            const balance = memberDeposit - bill;
+            // Calculate member's share of expenses (only expenses they're included in)
+            const memberExpenseShare = expenses
+                .filter(exp => exp.splitAmong && exp.splitAmong.some(m => m.toString() === member._id.toString()))
+                .reduce((sum, exp) => sum + (exp.amount / exp.splitAmong.length), 0);
+
+            const memberBill = (memberMeals * mealRate) + memberExpenseShare;
+            const balance = memberDeposit - memberBill;
 
             return {
                 _id: member._id,
                 name: member.name,
                 meals: memberMeals,
                 deposit: memberDeposit,
-                bill: bill,
+                bill: memberBill,
                 balance: balance
             };
         });
@@ -66,6 +75,7 @@ export async function GET(request) {
                 totalGrocery,
                 totalMeals,
                 totalDeposit,
+                totalExpense,
                 totalBalance,
                 mealRate,
                 memberStats

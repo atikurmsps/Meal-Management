@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Settings, ShoppingCart, Wallet, Utensils } from 'lucide-react';
+import { LayoutDashboard, Settings, ShoppingCart, Wallet, Utensils, Receipt } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useState, useEffect } from 'react';
 import ConfirmModal from './ConfirmModal';
@@ -10,7 +10,8 @@ import ConfirmModal from './ConfirmModal';
 const navItems = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Meal History', href: '/history/meals', icon: Utensils },
-    { name: 'Expense History', href: '/history/expenses', icon: ShoppingCart },
+    { name: 'Grocery History', href: '/history/groceries', icon: ShoppingCart },
+    { name: 'Expense History', href: '/history/expenses', icon: Receipt },
     { name: 'Deposit History', href: '/history/deposits', icon: Wallet },
     { name: 'Settings', href: '/settings', icon: Settings },
 ];

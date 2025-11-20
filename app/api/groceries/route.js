@@ -1,5 +1,5 @@
 import dbConnect from '@/lib/db';
-import Deposit from '@/models/Deposit';
+import Grocery from '@/models/Grocery';
 import { NextResponse } from 'next/server';
 
 export async function GET(request) {
@@ -12,8 +12,8 @@ export async function GET(request) {
     }
 
     try {
-        const deposits = await Deposit.find({ month }).populate('memberId', 'name');
-        return NextResponse.json({ success: true, data: deposits });
+        const groceries = await Grocery.find({ month }).populate('addedBy', 'name');
+        return NextResponse.json({ success: true, data: groceries });
     } catch (error) {
         return NextResponse.json({ success: false, error: error.message }, { status: 400 });
     }
@@ -23,8 +23,8 @@ export async function POST(request) {
     await dbConnect();
     try {
         const body = await request.json();
-        const deposit = await Deposit.create(body);
-        return NextResponse.json({ success: true, data: deposit }, { status: 201 });
+        const grocery = await Grocery.create(body);
+        return NextResponse.json({ success: true, data: grocery }, { status: 201 });
     } catch (error) {
         return NextResponse.json({ success: false, error: error.message }, { status: 400 });
     }
@@ -40,13 +40,13 @@ export async function PUT(request) {
             return NextResponse.json({ success: false, error: 'ID is required' }, { status: 400 });
         }
 
-        const deposit = await Deposit.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+        const grocery = await Grocery.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
 
-        if (!deposit) {
-            return NextResponse.json({ success: false, error: 'Deposit not found' }, { status: 404 });
+        if (!grocery) {
+            return NextResponse.json({ success: false, error: 'Grocery not found' }, { status: 404 });
         }
 
-        return NextResponse.json({ success: true, data: deposit });
+        return NextResponse.json({ success: true, data: grocery });
     } catch (error) {
         return NextResponse.json({ success: false, error: error.message }, { status: 400 });
     }
@@ -62,10 +62,10 @@ export async function DELETE(request) {
             return NextResponse.json({ success: false, error: 'ID is required' }, { status: 400 });
         }
 
-        const deposit = await Deposit.findByIdAndDelete(id);
+        const grocery = await Grocery.findByIdAndDelete(id);
 
-        if (!deposit) {
-            return NextResponse.json({ success: false, error: 'Deposit not found' }, { status: 404 });
+        if (!grocery) {
+            return NextResponse.json({ success: false, error: 'Grocery not found' }, { status: 404 });
         }
 
         return NextResponse.json({ success: true, data: {} });

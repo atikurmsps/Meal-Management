@@ -1,16 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
-export default function AddDepositModal({ isOpen, onClose, members, onSave }) {
+export default function AddDepositModal({ isOpen, onClose, members, onSave, editData = null }) {
     const [memberId, setMemberId] = useState('');
     const [amount, setAmount] = useState('');
     const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
 
+    useEffect(() => {
+        if (editData) {
+            setMemberId(editData.memberId?._id || editData.memberId || '');
+            setAmount(editData.amount?.toString() || '');
+            setDate(editData.date ? new Date(editData.date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10));
+        } else {
+            setMemberId('');
+            setAmount('');
+            setDate(new Date().toISOString().slice(0, 10));
+        }
+    }, [editData, isOpen]);
+
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSave({ memberId, amount: Number(amount), date });
+        onSave({
+            id: editData?._id,
+            memberId,
+            amount: Number(amount),
+            date
+        });
         // Reset
         setMemberId('');
         setAmount('');
@@ -23,7 +40,7 @@ export default function AddDepositModal({ isOpen, onClose, members, onSave }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <div className="w-full max-w-md rounded-lg bg-background p-6 shadow-lg border border-border">
                 <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-primary">Add Deposit</h2>
+                    <h2 className="text-xl font-bold text-primary">{editData ? 'Edit Deposit' : 'Add Deposit'}</h2>
                     <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
                         <X className="h-6 w-6" />
                     </button>
@@ -82,7 +99,7 @@ export default function AddDepositModal({ isOpen, onClose, members, onSave }) {
                             type="submit"
                             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                         >
-                            Add Deposit
+                            {editData ? 'Update Deposit' : 'Add Deposit'}
                         </button>
                     </div>
                 </form>
