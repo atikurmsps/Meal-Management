@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
+import ConfirmModal from '@/components/ConfirmModal';
 
 export default function SettingsPage() {
     const [members, setMembers] = useState([]);
     const [newMemberName, setNewMemberName] = useState('');
     const [currentMonth, setCurrentMonth] = useState('');
+    const [pendingMonth, setPendingMonth] = useState('');
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -51,18 +54,32 @@ export default function SettingsPage() {
         }
     };
 
-    const handleMonthChange = async (e) => {
+    const handleMonthChange = (e) => {
         const newMonth = e.target.value;
-        setCurrentMonth(newMonth);
+        setPendingMonth(newMonth);
+        setShowConfirmModal(true);
+    };
+
+    const confirmMonthChange = async () => {
+        setCurrentMonth(pendingMonth);
+        setShowConfirmModal(false);
+
         try {
             await fetch('/api/settings', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ currentMonth: newMonth }),
+                body: JSON.stringify({ currentMonth: pendingMonth }),
             });
+            // Reload to refresh all data
+            window.location.reload();
         } catch (error) {
             console.error('Error updating month:', error);
         }
+    };
+
+    const cancelMonthChange = () => {
+        setShowConfirmModal(false);
+        setPendingMonth('');
     };
 
     if (loading) return <div className="p-8 text-center">Loading...</div>;
@@ -128,6 +145,14 @@ export default function SettingsPage() {
                     )}
                 </div>
             </section>
+
+            <ConfirmModal
+                isOpen={showConfirmModal}
+                onClose={cancelMonthChange}
+                onConfirm={confirmMonthChange}
+                title="Switch Month"
+                message={`Are you sure you want to switch to ${pendingMonth}?\n\nThis will change the active month for all data and reload the page.`}
+            />
         </div>
     );
 }
