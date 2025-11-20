@@ -187,9 +187,10 @@ export default function Dashboard() {
                             <tr>
                                 <th className="px-6 py-3 font-medium">Member</th>
                                 <th className="px-6 py-3 font-medium text-right">Meals</th>
-                                <th className="px-6 py-3 font-medium text-right">Bill</th>
+                                <th className="px-6 py-3 font-medium text-right">Meal Bill</th>
                                 <th className="px-6 py-3 font-medium text-right">Deposit</th>
                                 <th className="px-6 py-3 font-medium text-right">Meal Balance</th>
+                                <th className="px-6 py-3 font-medium text-right">Expense Balance</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
@@ -197,10 +198,13 @@ export default function Dashboard() {
                                 <tr key={member._id} className="hover:bg-muted/10">
                                     <td className="px-6 py-4 font-medium">{member.name}</td>
                                     <td className="px-6 py-4 text-right">{member.meals.toFixed(1)}</td>
-                                    <td className="px-6 py-4 text-right">৳{member.bill.toFixed(0)}</td>
+                                    <td className="px-6 py-4 text-right">৳{member.mealBill.toFixed(0)}</td>
                                     <td className="px-6 py-4 text-right">৳{member.deposit.toFixed(0)}</td>
                                     <td className={`px-6 py-4 text-right font-bold ${member.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                         {member.balance >= 0 ? '+' : ''}৳{member.balance.toFixed(0)}
+                                    </td>
+                                    <td className={`px-6 py-4 text-right font-bold ${member.expenseBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        {member.expenseBalance >= 0 ? '+' : ''}৳{member.expenseBalance.toFixed(0)}
                                     </td>
                                 </tr>
                             ))}

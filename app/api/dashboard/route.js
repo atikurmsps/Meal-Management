@@ -50,21 +50,37 @@ export async function GET(request) {
                 .filter(d => d.memberId.toString() === member._id.toString())
                 .reduce((sum, d) => sum + d.amount, 0);
 
+            // Calculate meal bill only (no expenses)
+            const mealBill = memberMeals * mealRate;
+
             // Calculate member's share of expenses (only expenses they're included in)
             const memberExpenseShare = expenses
                 .filter(exp => exp.splitAmong && exp.splitAmong.some(m => m.toString() === member._id.toString()))
                 .reduce((sum, exp) => sum + (exp.amount / exp.splitAmong.length), 0);
 
-            const memberBill = (memberMeals * mealRate) + memberExpenseShare;
-            const balance = memberDeposit - memberBill;
+            // Calculate how much member paid for expenses
+            const memberExpensePaid = expenses
+                .filter(exp => exp.paidBy && exp.paidBy.toString() === member._id.toString())
+                .reduce((sum, exp) => sum + exp.amount, 0);
+
+            // Expense balance = what they paid - what they owe
+            const expenseBalance = memberExpensePaid - memberExpenseShare;
+
+            // Meal balance = deposit - meal bill only (no expenses)
+            const mealBalance = memberDeposit - mealBill;
+
+            // Total bill includes both meal and expense share
+            const totalBill = mealBill + memberExpenseShare;
 
             return {
                 _id: member._id,
                 name: member.name,
                 meals: memberMeals,
                 deposit: memberDeposit,
-                bill: memberBill,
-                balance: balance
+                mealBill: mealBill,
+                expenseBalance: expenseBalance,
+                bill: totalBill,
+                balance: mealBalance
             };
         });
 
