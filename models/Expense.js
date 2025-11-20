@@ -1,0 +1,30 @@
+import mongoose from 'mongoose';
+
+const ExpenseSchema = new mongoose.Schema({
+    description: {
+        type: String,
+        required: [true, 'Please provide a description.'],
+    },
+    amount: {
+        type: Number,
+        required: [true, 'Please provide an amount.'],
+    },
+    date: {
+        type: Date,
+        default: Date.now,
+    },
+    addedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Member',
+        required: false, // Optional if generic admin adds it
+    },
+    note: {
+        type: String,
+    },
+    month: {
+        type: String, // YYYY-MM format
+        required: true,
+    },
+});
+
+export default mongoose.models.Expense || mongoose.model('Expense', ExpenseSchema);

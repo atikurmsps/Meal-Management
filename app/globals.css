@@ -2,20 +2,47 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #052e16; /* dark green/black */
+  --primary: #15803d; /* green-700 */
+  --primary-foreground: #ffffff;
+  --secondary: #f0fdf4; /* green-50 */
+  --secondary-foreground: #166534; /* green-800 */
+  --accent: #22c55e; /* green-500 */
+  --accent-foreground: #ffffff;
+  --muted: #f0fdf4;
+  --muted-foreground: #166534;
+  --border: #15803d;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #022c22; /* very dark green */
+    --foreground: #f0fdf4;
+    --primary: #22c55e; /* green-500 */
+    --primary-foreground: #022c22;
+    --secondary: #14532d; /* green-900 */
+    --secondary-foreground: #f0fdf4;
+    --accent: #4ade80; /* green-400 */
+    --accent-foreground: #022c22;
+    --muted: #064e3b;
+    --muted-foreground: #a7f3d0;
+    --border: #22c55e;
   }
 }
 
