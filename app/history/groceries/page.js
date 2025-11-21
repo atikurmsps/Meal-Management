@@ -7,6 +7,7 @@ import ConfirmModal from '@/components/ConfirmModal';
 
 export default function GroceryHistoryPage() {
     const [groceries, setGroceries] = useState([]);
+    const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,9 +29,22 @@ export default function GroceryHistoryPage() {
         }
     }, [month]);
 
+    const fetchMembers = useCallback(async () => {
+        try {
+            const res = await fetch('/api/members');
+            const data = await res.json();
+            if (data.success) {
+                setMembers(data.data);
+            }
+        } catch (error) {
+            console.error('Error fetching members:', error);
+        }
+    }, []);
+
     useEffect(() => {
         fetchGroceries();
-    }, [fetchGroceries]);
+        fetchMembers();
+    }, [fetchGroceries, fetchMembers]);
 
     const handleSave = async (groceryData) => {
         try {
@@ -103,6 +117,7 @@ export default function GroceryHistoryPage() {
                             <tr>
                                 <th className="px-6 py-3 font-medium">Date</th>
                                 <th className="px-6 py-3 font-medium">Description</th>
+                                <th className="px-6 py-3 font-medium">Done By</th>
                                 <th className="px-6 py-3 font-medium">Note</th>
                                 <th className="px-6 py-3 font-medium text-right">Amount</th>
                                 <th className="px-6 py-3 font-medium text-center">Actions</th>
@@ -110,14 +125,15 @@ export default function GroceryHistoryPage() {
                         </thead>
                         <tbody className="divide-y divide-border">
                             {loading ? (
-                                <tr><td colSpan="5" className="p-4 text-center">Loading...</td></tr>
+                                <tr><td colSpan="6" className="p-4 text-center">Loading...</td></tr>
                             ) : groceries.length === 0 ? (
-                                <tr><td colSpan="5" className="p-4 text-center text-muted-foreground">No groceries found for this month.</td></tr>
+                                <tr><td colSpan="6" className="p-4 text-center text-muted-foreground">No groceries found for this month.</td></tr>
                             ) : (
                                 groceries.map((grocery) => (
                                     <tr key={grocery._id} className="hover:bg-muted/10">
                                         <td className="px-6 py-4">{new Date(grocery.date).toLocaleDateString()}</td>
                                         <td className="px-6 py-4 font-medium">{grocery.description}</td>
+                                        <td className="px-6 py-4">{grocery.doneBy?.name || '-'}</td>
                                         <td className="px-6 py-4 text-muted-foreground">{grocery.note}</td>
                                         <td className="px-6 py-4 text-right font-medium">৳{grocery.amount.toFixed(0)}</td>
                                         <td className="px-6 py-4">
@@ -153,6 +169,7 @@ export default function GroceryHistoryPage() {
                     setEditingGrocery(null);
                 }}
                 onSave={handleSave}
+                members={members}
                 editData={editingGrocery}
             />
 

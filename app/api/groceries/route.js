@@ -12,7 +12,10 @@ export async function GET(request) {
     }
 
     try {
-        const groceries = await Grocery.find({ month }).populate('addedBy', 'name');
+        const groceries = await Grocery.find({ month })
+            .populate('doneBy', 'name')
+            .populate('addedBy', 'name')
+            .sort({ date: -1 });
         return NextResponse.json({ success: true, data: groceries });
     } catch (error) {
         return NextResponse.json({ success: false, error: error.message }, { status: 400 });

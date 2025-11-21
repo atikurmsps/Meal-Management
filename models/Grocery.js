@@ -13,6 +13,11 @@ const GrocerySchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    doneBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Member',
+        required: true,
+    },
     addedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Member',

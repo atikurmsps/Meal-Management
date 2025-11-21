@@ -196,7 +196,14 @@ export default function Dashboard() {
                         <tbody className="divide-y divide-border">
                             {data.memberStats.map((member) => (
                                 <tr key={member._id} className="hover:bg-muted/10">
-                                    <td className="px-6 py-4 font-medium">{member.name}</td>
+                                    <td className="px-6 py-4 font-medium">
+                                        <Link
+                                            href={`/member/${member._id}?month=${data.month}`}
+                                            className="text-primary hover:underline cursor-pointer"
+                                        >
+                                            {member.name}
+                                        </Link>
+                                    </td>
                                     <td className="px-6 py-4 text-right">{member.meals.toFixed(1)}</td>
                                     <td className="px-6 py-4 text-right">৳{member.mealBill.toFixed(0)}</td>
                                     <td className="px-6 py-4 text-right">৳{member.deposit.toFixed(0)}</td>
@@ -222,6 +229,7 @@ export default function Dashboard() {
             <AddGroceryModal
                 isOpen={isGroceryModalOpen}
                 onClose={() => setIsGroceryModalOpen(false)}
+                members={members}
                 onSave={handleSaveGrocery}
             />
             <AddExpenseModal
