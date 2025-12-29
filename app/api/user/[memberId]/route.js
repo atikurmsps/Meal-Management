@@ -8,24 +8,41 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
     try {
+        console.log('API Route called with URL:', request.url);
+        console.log('API Route - params:', params);
+        console.log('API Route - params type:', typeof params);
+
         await dbConnect();
-        
-        const { memberId } = params;
-        
+
+        // Handle params - in Next.js 15+, params might be a Promise
+        const resolvedParams = params instanceof Promise ? await params : params;
+        const { memberId } = resolvedParams;
+        console.log('API Route - memberId:', memberId);
+
         if (!memberId) {
+            console.log('API Route - memberId is falsy');
             return NextResponse.json({ success: false, error: 'Member ID is required' }, { status: 400 });
         }
 
         const { searchParams } = new URL(request.url);
         const month = searchParams.get('month');
+        console.log('Month parameter:', month);
 
         if (!month) {
+            console.log('Month parameter is missing');
             return NextResponse.json({ success: false, error: 'Month is required' }, { status: 400 });
         }
 
         // Get member info
+        console.log('Looking up member with ID:', memberId);
         const member = await Member.findById(memberId);
+        console.log('Member found:', !!member, member?.name);
+
         if (!member) {
+            console.log('Member not found for ID:', memberId);
+            // Let's also check how many members exist
+            const totalMembers = await Member.countDocuments();
+            console.log('Total members in database:', totalMembers);
             return NextResponse.json({ success: false, error: 'Member not found' }, { status: 404 });
         }
 

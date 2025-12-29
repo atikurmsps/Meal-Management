@@ -100,117 +100,151 @@ export default function Dashboard() {
 
     return (
         <div className="space-y-8">
-            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-                <div>
-                    <h1 className="text-3xl font-bold text-primary">Dashboard</h1>
-                    <p className="text-muted-foreground">Overview for {data.month}</p>
+            {/* Header Section */}
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                    <h1 className="text-4xl font-bold text-foreground tracking-tight">Dashboard</h1>
+                    <p className="text-muted-foreground text-lg">Overview for {data.month}</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-3">
                     <button
                         onClick={() => setIsMealModalOpen(true)}
-                        className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                        className="btn inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2.5 text-sm font-medium rounded-lg shadow-sm"
                     >
-                        <Utensils className="h-4 w-4" /> Add Meal
+                        <Utensils className="h-4 w-4" />
+                        Add Meal
                     </button>
                     <button
                         onClick={() => setIsGroceryModalOpen(true)}
-                        className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+                        className="btn inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-2.5 text-sm font-medium rounded-lg shadow-sm"
                     >
-                        <ShoppingCart className="h-4 w-4" /> Add Grocery
+                        <ShoppingCart className="h-4 w-4" />
+                        Add Grocery
                     </button>
                     <button
                         onClick={() => setIsExpenseModalOpen(true)}
-                        className="flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground hover:bg-accent/90"
+                        className="btn inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-2.5 text-sm font-medium rounded-lg shadow-sm"
                     >
-                        <Receipt className="h-4 w-4" /> Add Expense
+                        <Receipt className="h-4 w-4" />
+                        Add Expense
                     </button>
                     <button
                         onClick={() => setIsDepositModalOpen(true)}
-                        className="flex items-center gap-2 rounded-md bg-secondary px-4 py-2 text-sm font-medium text-secondary-foreground hover:bg-secondary/90"
+                        className="btn inline-flex items-center gap-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground px-4 py-2.5 text-sm font-medium rounded-lg shadow-sm border border-border"
                     >
-                        <Wallet className="h-4 w-4" /> Add Deposit
+                        <Wallet className="h-4 w-4" />
+                        Add Deposit
                     </button>
                 </div>
             </div>
 
             {/* Summary Cards */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
-                <Link href="/history/meals" className="block transition-transform hover:scale-105">
-                    <div className="rounded-lg border border-border bg-card p-6 shadow-sm h-full cursor-pointer hover:border-primary/50">
-                        <div className="text-sm font-medium text-muted-foreground">Total Meals</div>
-                        <div className="mt-2 text-3xl font-bold">{data.totalMeals.toFixed(1)}</div>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                <Link href="/history/meals" className="block group">
+                    <div className="card p-6 h-full group-hover:shadow-lg transition-all duration-200">
+                        <div className="text-center">
+                            <p className="text-sm font-medium text-muted-foreground mb-2">Total Meals</p>
+                            <p className="text-3xl font-bold text-foreground">{data.totalMeals.toFixed(1)}</p>
+                        </div>
                     </div>
                 </Link>
 
-                <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
-                    <div className="text-sm font-medium text-muted-foreground">Meal Rate</div>
-                    <div className="mt-2 text-3xl font-bold">৳{data.mealRate.toFixed(2)}</div>
+                <div className="card p-6">
+                    <div className="text-center">
+                        <p className="text-sm font-medium text-muted-foreground mb-2">Meal Rate</p>
+                        <p className="text-3xl font-bold text-foreground">{data.mealRate.toFixed(2)}</p>
+                    </div>
                 </div>
 
-                <Link href="/history/groceries" className="block transition-transform hover:scale-105">
-                    <div className="rounded-lg border border-border bg-card p-6 shadow-sm h-full cursor-pointer hover:border-primary/50">
-                        <div className="text-sm font-medium text-muted-foreground">Total Grocery</div>
-                        <div className="mt-2 text-3xl font-bold">৳{data.totalGrocery.toFixed(0)}</div>
+                <Link href="/history/groceries" className="block group">
+                    <div className="card p-6 h-full group-hover:shadow-lg transition-all duration-200">
+                        <div className="text-center">
+                            <p className="text-sm font-medium text-muted-foreground mb-2">Total Grocery</p>
+                            <p className="text-3xl font-bold text-foreground">{data.totalGrocery.toFixed(0)}</p>
+                        </div>
                     </div>
                 </Link>
 
-                <Link href="/history/deposits" className="block transition-transform hover:scale-105">
-                    <div className="rounded-lg border border-border bg-card p-6 shadow-sm h-full cursor-pointer hover:border-primary/50">
-                        <div className="text-sm font-medium text-muted-foreground">Total Deposit</div>
-                        <div className="mt-2 text-3xl font-bold">৳{data.totalDeposit.toFixed(0)}</div>
+                <Link href="/history/deposits" className="block group">
+                    <div className="card p-6 h-full group-hover:shadow-lg transition-all duration-200">
+                        <div className="text-center">
+                            <p className="text-sm font-medium text-muted-foreground mb-2">Total Deposit</p>
+                            <p className="text-3xl font-bold text-foreground">{data.totalDeposit.toFixed(0)}</p>
+                        </div>
                     </div>
                 </Link>
 
-                <Link href="/history/expenses" className="block transition-transform hover:scale-105">
-                    <div className="rounded-lg border border-border bg-card p-6 shadow-sm h-full cursor-pointer hover:border-primary/50">
-                        <div className="text-sm font-medium text-muted-foreground">Total Expense</div>
-                        <div className="mt-2 text-3xl font-bold">৳{data.totalExpense.toFixed(0)}</div>
-                    </div>
-                </Link>
-
-                <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
-                    <div className="text-sm font-medium text-muted-foreground">Meal Balance</div>
-                    <div className={`mt-2 text-3xl font-bold ${data.totalBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {data.totalBalance >= 0 ? '+' : ''}৳{data.totalBalance.toFixed(0)}
+                <div className="card p-6">
+                    <div className="text-center">
+                        <p className="text-sm font-medium text-muted-foreground mb-2">Meal Balance</p>
+                        <p className={`text-3xl font-bold ${data.totalBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {data.totalBalance >= 0 ? '+' : ''}{data.totalBalance.toFixed(0)}
+                        </p>
                     </div>
                 </div>
+
+                <Link href="/history/expenses" className="block group">
+                    <div className="card p-6 h-full group-hover:shadow-lg transition-all duration-200">
+                        <div className="text-center">
+                            <p className="text-sm font-medium text-muted-foreground mb-2">Total Expense</p>
+                            <p className="text-3xl font-bold text-foreground">{data.totalExpense.toFixed(0)}</p>
+                        </div>
+                    </div>
+                </Link>
             </div>
 
-            {/* Member Table */}
-            <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-border">
-                    <h2 className="text-xl font-semibold">Member Status</h2>
+            {/* Member Status */}
+            <div className="card overflow-hidden">
+                <div className="px-6 py-5 border-b border-border">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <span className="text-primary font-semibold text-sm">👥</span>
+                        </div>
+                        <h2 className="text-xl font-semibold text-foreground">Member Status</h2>
+                    </div>
                 </div>
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-muted/50 text-muted-foreground">
+                    <table className="w-full">
+                        <thead className="bg-muted/30">
                             <tr>
-                                <th className="px-6 py-3 font-medium">Member</th>
-                                <th className="px-6 py-3 font-medium text-right">Meals</th>
-                                <th className="px-6 py-3 font-medium text-right">Meal Bill</th>
-                                <th className="px-6 py-3 font-medium text-right">Deposit</th>
-                                <th className="px-6 py-3 font-medium text-right">Meal Balance</th>
-                                <th className="px-6 py-3 font-medium text-right">Expense Balance</th>
+                                <th className="px-6 py-4 text-left text-sm font-semibold text-muted-foreground">Member</th>
+                                <th className="px-6 py-4 text-right text-sm font-semibold text-muted-foreground">Meals</th>
+                                <th className="px-6 py-4 text-right text-sm font-semibold text-muted-foreground">Meal Bill</th>
+                                <th className="px-6 py-4 text-right text-sm font-semibold text-muted-foreground">Deposit</th>
+                                <th className="px-6 py-4 text-right text-sm font-semibold text-muted-foreground">Meal Balance</th>
+                                <th className="px-6 py-4 text-right text-sm font-semibold text-muted-foreground">Expense Balance</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
-                            {data.memberStats.map((member) => (
-                                <tr key={member._id} className="hover:bg-muted/10">
-                                    <td className="px-6 py-4 font-medium">
+                            {data.memberStats.map((member, index) => (
+                                <tr key={member._id} className="hover:bg-muted/20 transition-colors duration-150">
+                                    <td className="px-6 py-4">
                                         <Link
                                             href={`/member/${member._id}?month=${data.month}`}
-                                            className="text-primary hover:underline cursor-pointer"
+                                            className="inline-flex items-center gap-3 group"
+                                            onClick={() => console.log('Navigating to member:', member._id, member.name)}
                                         >
-                                            {member.name}
+                                            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                                                <span className="text-primary font-semibold text-sm">
+                                                    {member.name.charAt(0).toUpperCase()}
+                                                </span>
+                                            </div>
+                                            <span className="font-medium text-foreground group-hover:text-primary transition-colors">
+                                                {member.name}
+                                            </span>
                                         </Link>
                                     </td>
-                                    <td className="px-6 py-4 text-right">{member.meals.toFixed(1)}</td>
-                                    <td className="px-6 py-4 text-right">৳{member.mealBill.toFixed(0)}</td>
-                                    <td className="px-6 py-4 text-right">৳{member.deposit.toFixed(0)}</td>
-                                    <td className={`px-6 py-4 text-right font-bold ${member.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    <td className="px-6 py-4 text-right text-sm font-medium text-foreground">{member.meals.toFixed(1)}</td>
+                                    <td className="px-6 py-4 text-right text-sm font-medium text-foreground">৳{member.mealBill.toFixed(0)}</td>
+                                    <td className="px-6 py-4 text-right text-sm font-medium text-foreground">৳{member.deposit.toFixed(0)}</td>
+                                    <td className={`px-6 py-4 text-right text-sm font-semibold ${
+                                        member.balance >= 0 ? 'text-green-600' : 'text-red-600'
+                                    }`}>
                                         {member.balance >= 0 ? '+' : ''}৳{member.balance.toFixed(0)}
                                     </td>
-                                    <td className={`px-6 py-4 text-right font-bold ${member.expenseBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    <td className={`px-6 py-4 text-right text-sm font-semibold ${
+                                        member.expenseBalance >= 0 ? 'text-green-600' : 'text-red-600'
+                                    }`}>
                                         {member.expenseBalance >= 0 ? '+' : ''}৳{member.expenseBalance.toFixed(0)}
                                     </td>
                                 </tr>

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Settings, ShoppingCart, Wallet, Utensils, Receipt } from 'lucide-react';
 import { clsx } from 'clsx';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import ConfirmModal from './ConfirmModal';
 
 const navItems = [
@@ -16,7 +16,7 @@ const navItems = [
     { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
-export default function Sidebar() {
+function SidebarComponent() {
     const pathname = usePathname();
     const [currentMonth, setCurrentMonth] = useState('');
     const [pendingMonth, setPendingMonth] = useState('');
@@ -66,42 +66,67 @@ export default function Sidebar() {
     };
 
     return (
-        <div className="flex h-full w-64 flex-col bg-primary text-primary-foreground shadow-xl">
-            <div className="flex h-16 items-center justify-center border-b border-primary-foreground/20">
-                <h1 className="text-2xl font-bold tracking-wider">Meal Mgr</h1>
+        <div className="flex h-full w-72 flex-col bg-white border-r border-border shadow-sm">
+            {/* Header */}
+            <div className="flex h-20 items-center justify-center border-b border-border bg-gradient-to-r from-primary/5 to-accent/5">
+                <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                        <span className="text-primary-foreground font-bold text-lg">M</span>
+                    </div>
+                    <h1 className="text-xl font-semibold text-foreground">Meal Manager</h1>
+                </div>
             </div>
 
             {/* Month Selector */}
-            <div className="border-b border-primary-foreground/20 p-4">
-                <label className="block text-xs font-medium opacity-70 mb-2">Current Month</label>
+            <div className="p-6 border-b border-border">
+                <label className="block text-sm font-medium text-foreground mb-3">Current Month</label>
                 <input
                     type="month"
                     value={currentMonth}
                     onChange={handleMonthChange}
-                    className="w-full rounded-md border border-primary-foreground/30 bg-primary-foreground/10 px-3 py-2 text-sm text-primary-foreground focus:border-primary-foreground/50 focus:ring-1 focus:ring-primary-foreground/50"
+                    className="w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-0"
                 />
             </div>
 
-            <nav className="flex-1 space-y-2 p-4">
+            {/* Navigation */}
+            <nav className="flex-1 p-4 space-y-1">
                 {navItems.map((item) => {
                     const Icon = item.icon;
+                    const isActive = pathname === item.href;
                     return (
                         <Link
                             key={item.href}
                             href={item.href}
                             className={clsx(
-                                'flex items-center space-x-3 rounded-lg px-4 py-3 transition-colors hover:bg-primary-foreground/10',
-                                pathname === item.href ? 'bg-primary-foreground/20 font-semibold' : ''
+                                'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 group',
+                                isActive
+                                    ? 'bg-primary text-primary-foreground shadow-sm'
+                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                             )}
                         >
-                            <Icon className="h-6 w-6" />
+                            <Icon className={clsx(
+                                "h-5 w-5 transition-colors",
+                                isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground"
+                            )} />
                             <span>{item.name}</span>
+                            {isActive && (
+                                <div className="ml-auto w-1.5 h-1.5 bg-primary-foreground rounded-full"></div>
+                            )}
                         </Link>
                     );
                 })}
             </nav>
-            <div className="p-4 text-center text-sm opacity-70">
-                &copy; {new Date().getFullYear()} Bachelor House
+
+            {/* Footer */}
+            <div className="p-6 border-t border-border">
+                <div className="text-center">
+                    <p className="text-xs text-muted-foreground">
+                        © {new Date().getFullYear()} Bachelor House
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        Meal Management System
+                    </p>
+                </div>
             </div>
 
             <ConfirmModal
@@ -114,3 +139,5 @@ export default function Sidebar() {
         </div>
     );
 }
+
+export default memo(SidebarComponent);
