@@ -7,17 +7,25 @@ import Deposit from '@/models/Deposit';
 import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
-    console.log('Member API called');
-    await dbConnect();
-    const { memberId } = params;
-    const { searchParams } = new URL(request.url);
-    const month = searchParams.get('month');
-
-    if (!month) {
-        return NextResponse.json({ success: false, error: 'Month is required' }, { status: 400 });
-    }
-
     try {
+        console.log('Member API called');
+        await dbConnect();
+        
+        // Handle params - in Next.js 15+, params might be a Promise
+        const resolvedParams = params instanceof Promise ? await params : params;
+        const { memberId } = resolvedParams;
+        
+        if (!memberId) {
+            return NextResponse.json({ success: false, error: 'Member ID is required' }, { status: 400 });
+        }
+
+        const { searchParams } = new URL(request.url);
+        const month = searchParams.get('month');
+
+        if (!month) {
+            return NextResponse.json({ success: false, error: 'Month is required' }, { status: 400 });
+        }
+
         // Get member info
         const member = await Member.findById(memberId);
         if (!member) {
@@ -102,6 +110,10 @@ export async function GET(request, { params }) {
             }
         });
     } catch (error) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+        console.error('Error in member API:', error);
+        return NextResponse.json({ 
+            success: false, 
+            error: error.message || 'An error occurred while fetching member data' 
+        }, { status: 500 });
     }
 }
