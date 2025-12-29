@@ -8,12 +8,9 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
     try {
-        console.log('Member API called');
         await dbConnect();
         
-        // Handle params - in Next.js 15+, params might be a Promise
-        const resolvedParams = params instanceof Promise ? await params : params;
-        const { memberId } = resolvedParams;
+        const { memberId } = params;
         
         if (!memberId) {
             return NextResponse.json({ success: false, error: 'Member ID is required' }, { status: 400 });
