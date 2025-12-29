@@ -4,15 +4,16 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import AddGroceryModal from '@/components/AddGroceryModal';
 import ConfirmModal from '@/components/ConfirmModal';
+import type { Grocery, Member, ApiResponse } from '@/types';
 
 export default function GroceryHistoryPage() {
-    const [groceries, setGroceries] = useState([]);
-    const [members, setMembers] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingGrocery, setEditingGrocery] = useState(null);
-    const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
+    const [groceries, setGroceries] = useState<Grocery[]>([]);
+    const [members, setMembers] = useState<Member[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [month, setMonth] = useState<string>(new Date().toISOString().slice(0, 7));
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+    const [editingGrocery, setEditingGrocery] = useState<Grocery | null>(null);
+    const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
     const fetchGroceries = useCallback(async () => {
         setLoading(true);
@@ -46,7 +47,7 @@ export default function GroceryHistoryPage() {
         fetchMembers();
     }, [fetchGroceries, fetchMembers]);
 
-    const handleSave = async (groceryData) => {
+    const handleSave = async (groceryData: { doneBy: string; description: string; amount: number; note?: string; date: string }) => {
         try {
             const url = '/api/groceries';
             const method = groceryData.id ? 'PUT' : 'POST';

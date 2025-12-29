@@ -1,24 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import type { AddMealModalProps, Member } from '@/types';
 
-export default function AddMealModal({ isOpen, onClose, members, onSave }) {
-    const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
-    const [mealCounts, setMealCounts] = useState({});
+export default function AddMealModal({ isOpen, onClose, members, onSave }: AddMealModalProps) {
+    const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
+    const [mealCounts, setMealCounts] = useState<Record<string, string>>({});
 
     useEffect(() => {
         if (isOpen) {
             // Reset or fetch existing meals for this date?
             // For now, just reset to 0 or keep previous state if we want to be fancy.
             // Let's initialize with 0s or empty.
-            const initialCounts = {};
+            const initialCounts: Record<string, string> = {};
             members.forEach(m => initialCounts[m._id] = '');
             setMealCounts(initialCounts);
         }
     }, [isOpen, members]);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const meals = Object.entries(mealCounts).map(([memberId, count]) => ({
             memberId,

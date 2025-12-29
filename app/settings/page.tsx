@@ -3,14 +3,15 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import ConfirmModal from '@/components/ConfirmModal';
+import type { Member, ApiResponse } from '@/types';
 
 export default function SettingsPage() {
-    const [members, setMembers] = useState([]);
-    const [newMemberName, setNewMemberName] = useState('');
-    const [currentMonth, setCurrentMonth] = useState('');
-    const [pendingMonth, setPendingMonth] = useState('');
-    const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const [members, setMembers] = useState<Member[]>([]);
+    const [newMemberName, setNewMemberName] = useState<string>('');
+    const [currentMonth, setCurrentMonth] = useState<string>('');
+    const [pendingMonth, setPendingMonth] = useState<string>('');
+    const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
         fetchData();

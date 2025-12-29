@@ -1,22 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import type { AddExpenseModalProps, Expense } from '@/types';
 
-export default function AddExpenseModal({ isOpen, onClose, onSave, members, editData = null }) {
-    const [description, setDescription] = useState('');
-    const [amount, setAmount] = useState('');
-    const [paidBy, setPaidBy] = useState('');
-    const [splitAmong, setSplitAmong] = useState([]);
-    const [note, setNote] = useState('');
-    const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+interface ExtendedAddExpenseModalProps extends AddExpenseModalProps {
+    editData?: Expense | null;
+}
+
+export default function AddExpenseModal({ isOpen, onClose, onSave, members, editData }: ExtendedAddExpenseModalProps) {
+    const [description, setDescription] = useState<string>('');
+    const [amount, setAmount] = useState<string>('');
+    const [paidBy, setPaidBy] = useState<string>('');
+    const [splitAmong, setSplitAmong] = useState<string[]>([]);
+    const [note, setNote] = useState<string>('');
+    const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
 
     useEffect(() => {
         if (editData) {
             setDescription(editData.description || '');
             setAmount(editData.amount?.toString() || '');
-            setPaidBy(editData.paidBy?._id || editData.paidBy || '');
-            setSplitAmong(editData.splitAmong?.map(m => m._id || m) || []);
+            setPaidBy(typeof editData.paidBy === 'object' ? (editData.paidBy as any)._id : editData.paidBy || '');
+            setSplitAmong(editData.splitAmong?.map((m: any) => m._id || m) || []);
             setNote(editData.note || '');
             setDate(editData.date ? new Date(editData.date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10));
         } else {
@@ -29,7 +34,7 @@ export default function AddExpenseModal({ isOpen, onClose, onSave, members, edit
         }
     }, [editData, isOpen, members]);
 
-    const toggleMember = (memberId) => {
+    const toggleMember = (memberId: string) => {
         setSplitAmong(prev =>
             prev.includes(memberId)
                 ? prev.filter(id => id !== memberId)
@@ -39,19 +44,17 @@ export default function AddExpenseModal({ isOpen, onClose, onSave, members, edit
 
     const splitAmount = splitAmong.length > 0 ? (Number(amount) / splitAmong.length).toFixed(2) : 0;
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (splitAmong.length === 0) {
             alert('Please select at least one member to split the expense among.');
             return;
         }
         onSave({
-            id: editData?._id,
             description,
             amount: Number(amount),
             paidBy,
             splitAmong,
-            note,
             date
         });
         // Reset form
@@ -155,7 +158,7 @@ export default function AddExpenseModal({ isOpen, onClose, onSave, members, edit
                         <textarea
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
-                            rows="3"
+                            rows={3}
                             className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-foreground focus:border-primary focus:ring-1 focus:ring-primary"
                         />
                     </div>

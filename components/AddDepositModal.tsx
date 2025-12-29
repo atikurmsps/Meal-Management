@@ -1,16 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import type { AddDepositModalProps, Deposit } from '@/types';
 
-export default function AddDepositModal({ isOpen, onClose, members, onSave, editData = null }) {
-    const [memberId, setMemberId] = useState('');
-    const [amount, setAmount] = useState('');
-    const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+interface ExtendedAddDepositModalProps extends AddDepositModalProps {
+    editData?: Deposit | null;
+}
+
+export default function AddDepositModal({ isOpen, onClose, members, onSave, editData }: ExtendedAddDepositModalProps) {
+    const [memberId, setMemberId] = useState<string>('');
+    const [amount, setAmount] = useState<string>('');
+    const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
 
     useEffect(() => {
         if (editData) {
-            setMemberId(editData.memberId?._id || editData.memberId || '');
+            setMemberId(typeof editData.memberId === 'object' ? (editData.memberId as any)._id : editData.memberId || '');
             setAmount(editData.amount?.toString() || '');
             setDate(editData.date ? new Date(editData.date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10));
         } else {
@@ -20,10 +25,9 @@ export default function AddDepositModal({ isOpen, onClose, members, onSave, edit
         }
     }, [editData, isOpen]);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         onSave({
-            id: editData?._id,
             memberId,
             amount: Number(amount),
             date

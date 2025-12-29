@@ -1,8 +1,10 @@
 import dbConnect from '@/lib/db';
 import Settings from '@/models/Settings';
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import type { ApiResponse, Settings as SettingsType } from '@/types';
 
-export async function GET() {
+export async function GET(request: NextRequest): Promise<NextResponse<ApiResponse<SettingsType>>> {
     await dbConnect();
     try {
         let settings = await Settings.findOne();
@@ -11,11 +13,11 @@ export async function GET() {
         }
         return NextResponse.json({ success: true, data: settings });
     } catch (error) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+        return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'An error occurred' }, { status: 400 });
     }
 }
 
-export async function POST(request) {
+export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse<SettingsType>>> {
     await dbConnect();
     try {
         const { currentMonth } = await request.json();
@@ -28,6 +30,6 @@ export async function POST(request) {
         }
         return NextResponse.json({ success: true, data: settings });
     } catch (error) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+        return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'An error occurred' }, { status: 400 });
     }
 }

@@ -4,15 +4,16 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Wallet } from 'lucide-react';
+import type { MemberProfileData, ApiResponse } from '@/types';
 
 function MemberProfileContent() {
     const params = useParams();
     const searchParams = useSearchParams();
-    const memberId = params?.memberId;
-    const [month, setMonth] = useState(searchParams?.get?.('month') || new Date().toISOString().slice(0, 7));
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
+    const memberId = params?.memberId as string;
+    const [month, setMonth] = useState<string>(searchParams?.get?.('month') || new Date().toISOString().slice(0, 7));
+    const [data, setData] = useState<MemberProfileData | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
 
     // Debug logging
     useEffect(() => {
@@ -39,16 +40,16 @@ function MemberProfileContent() {
             console.log('Fetching from URL:', url);
 
             const res = await fetch(url);
-            const result = await res.json();
+            const result: ApiResponse<MemberProfileData> = await res.json();
 
-            if (result.success) {
+            if (result.success && result.data) {
                 setData(result.data);
             } else {
                 setError(result.error || 'Failed to load member data');
             }
         } catch (error) {
             console.error('Error fetching member data:', error);
-            setError(error.message || 'An error occurred while fetching member data');
+            setError(error instanceof Error ? error.message : 'An error occurred while fetching member data');
         } finally {
             setLoading(false);
         }
@@ -184,7 +185,7 @@ function MemberProfileContent() {
                         <tbody className="divide-y divide-border">
                             {data.history.deposits.length === 0 ? (
                                 <tr>
-                                    <td colSpan="2" className="px-6 py-8 text-center text-muted-foreground">
+                                    <td colSpan={2} className="px-6 py-8 text-center text-muted-foreground">
                                         <div className="flex flex-col items-center gap-2">
                                             <span className="text-2xl">💰</span>
                                             <span>No deposits found</span>
@@ -222,7 +223,7 @@ function MemberProfileContent() {
                         </thead>
                         <tbody className="divide-y divide-border">
                             {data.history.expenses.length === 0 ? (
-                                <tr><td colSpan="5" className="p-4 text-center text-muted-foreground">No expenses found</td></tr>
+                                <tr><td colSpan={5} className="p-4 text-center text-muted-foreground">No expenses found</td></tr>
                             ) : (
                                 data.history.expenses.map((expense) => (
                                     <tr key={expense._id} className="hover:bg-muted/10">
@@ -258,7 +259,7 @@ function MemberProfileContent() {
                         </thead>
                         <tbody className="divide-y divide-border">
                             {data.history.groceries.length === 0 ? (
-                                <tr><td colSpan="4" className="p-4 text-center text-muted-foreground">No groceries found</td></tr>
+                                <tr><td colSpan={4} className="p-4 text-center text-muted-foreground">No groceries found</td></tr>
                             ) : (
                                 data.history.groceries.map((grocery) => (
                                     <tr key={grocery._id} className="hover:bg-muted/10">
@@ -289,7 +290,7 @@ function MemberProfileContent() {
                         </thead>
                         <tbody className="divide-y divide-border">
                             {data.history.meals.length === 0 ? (
-                                <tr><td colSpan="2" className="p-4 text-center text-muted-foreground">No meals found</td></tr>
+                                <tr><td colSpan={2} className="p-4 text-center text-muted-foreground">No meals found</td></tr>
                             ) : (
                                 data.history.meals.map((meal) => (
                                     <tr key={meal._id} className="hover:bg-muted/10">

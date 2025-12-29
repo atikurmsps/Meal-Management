@@ -7,15 +7,16 @@ import AddMealModal from '@/components/AddMealModal';
 import AddGroceryModal from '@/components/AddGroceryModal';
 import AddExpenseModal from '@/components/AddExpenseModal';
 import AddDepositModal from '@/components/AddDepositModal';
+import type { DashboardData, Member, ApiResponse } from '@/types';
 
 export default function Dashboard() {
-    const [data, setData] = useState(null);
-    const [members, setMembers] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [isMealModalOpen, setIsMealModalOpen] = useState(false);
-    const [isGroceryModalOpen, setIsGroceryModalOpen] = useState(false);
-    const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
-    const [isDepositModalOpen, setIsDepositModalOpen] = useState(false);
+    const [data, setData] = useState<DashboardData | null>(null);
+    const [members, setMembers] = useState<Member[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [isMealModalOpen, setIsMealModalOpen] = useState<boolean>(false);
+    const [isGroceryModalOpen, setIsGroceryModalOpen] = useState<boolean>(false);
+    const [isExpenseModalOpen, setIsExpenseModalOpen] = useState<boolean>(false);
+    const [isDepositModalOpen, setIsDepositModalOpen] = useState<boolean>(false);
 
     const fetchData = useCallback(async () => {
         try {
@@ -23,11 +24,11 @@ export default function Dashboard() {
                 fetch('/api/dashboard'),
                 fetch('/api/members')
             ]);
-            const dashboardData = await dashboardRes.json();
-            const membersData = await membersRes.json();
+            const dashboardData: ApiResponse<DashboardData> = await dashboardRes.json();
+            const membersData: ApiResponse<Member[]> = await membersRes.json();
 
-            if (dashboardData.success) setData(dashboardData.data);
-            if (membersData.success) setMembers(membersData.data);
+            if (dashboardData.success && dashboardData.data) setData(dashboardData.data);
+            if (membersData.success && membersData.data) setMembers(membersData.data);
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
@@ -39,12 +40,12 @@ export default function Dashboard() {
         fetchData();
     }, [fetchData]);
 
-    const handleSaveMeal = async (mealData) => {
+    const handleSaveMeal = async (mealData: { date: string; meals: { memberId: string; count: number }[] }) => {
         try {
             await fetch('/api/meals', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...mealData, month: data.month }),
+                body: JSON.stringify({ ...mealData, month: data?.month }),
             });
             setIsMealModalOpen(false);
             fetchData();
@@ -53,12 +54,12 @@ export default function Dashboard() {
         }
     };
 
-    const handleSaveGrocery = async (groceryData) => {
+    const handleSaveGrocery = async (groceryData: { doneBy: string; description: string; amount: number; note?: string; date: string }) => {
         try {
             await fetch('/api/groceries', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...groceryData, month: data.month }),
+                body: JSON.stringify({ ...groceryData, month: data?.month }),
             });
             setIsGroceryModalOpen(false);
             fetchData();
@@ -67,12 +68,12 @@ export default function Dashboard() {
         }
     };
 
-    const handleSaveExpense = async (expenseData) => {
+    const handleSaveExpense = async (expenseData: { paidBy: string; splitAmong: string[]; description: string; amount: number; date: string }) => {
         try {
             await fetch('/api/expenses', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...expenseData, month: data.month }),
+                body: JSON.stringify({ ...expenseData, month: data?.month }),
             });
             setIsExpenseModalOpen(false);
             fetchData();
@@ -81,12 +82,12 @@ export default function Dashboard() {
         }
     };
 
-    const handleSaveDeposit = async (depositData) => {
+    const handleSaveDeposit = async (depositData: { memberId: string; amount: number; date: string }) => {
         try {
             await fetch('/api/deposits', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...depositData, month: data.month }),
+                body: JSON.stringify({ ...depositData, month: data?.month }),
             });
             setIsDepositModalOpen(false);
             fetchData();

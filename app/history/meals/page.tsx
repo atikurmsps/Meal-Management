@@ -2,32 +2,39 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
-import AddDepositModal from '@/components/AddDepositModal';
+import AddMealModal from '@/components/AddMealModal';
+import EditMealModal from '@/components/EditMealModal';
 import ConfirmModal from '@/components/ConfirmModal';
+import type { Meal, Member, ApiResponse } from '@/types';
 
-export default function DepositHistoryPage() {
-    const [deposits, setDeposits] = useState([]);
-    const [members, setMembers] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingDeposit, setEditingDeposit] = useState(null);
-    const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
+export default function MealHistoryPage() {
+    const [meals, setMeals] = useState<Meal[]>([]);
+    const [members, setMembers] = useState<Member[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [month, setMonth] = useState<string>(new Date().toISOString().slice(0, 7));
+    const [selectedMember, setSelectedMember] = useState<string>('');
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+    const [editingMeal, setEditingMeal] = useState<Meal | null>(null);
+    const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
-    const fetchDeposits = useCallback(async () => {
+    const fetchMeals = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/deposits?month=${month}`);
+            const url = selectedMember
+                ? `/api/meals?month=${month}&memberId=${selectedMember}`
+                : `/api/meals?month=${month}`;
+            const res = await fetch(url);
             const data = await res.json();
             if (data.success) {
-                setDeposits(data.data);
+                setMeals(data.data);
             }
         } catch (error) {
-            console.error('Error fetching deposits:', error);
+            console.error('Error fetching meals:', error);
         } finally {
             setLoading(false);
         }
-    }, [month]);
+    }, [month, selectedMember]);
 
     const fetchMembers = useCallback(async () => {
         try {
@@ -42,59 +49,73 @@ export default function DepositHistoryPage() {
     }, []);
 
     useEffect(() => {
-        fetchDeposits();
+        fetchMeals();
         fetchMembers();
-    }, [fetchDeposits, fetchMembers]);
+    }, [fetchMeals, fetchMembers]);
 
-    const handleSave = async (depositData) => {
+    const handleSaveMeal = async (mealData: { date: string; meals: { memberId: string; count: number }[] }) => {
         try {
-            const url = '/api/deposits';
-            const method = depositData.id ? 'PUT' : 'POST';
-            const body = depositData.id
-                ? depositData
-                : { ...depositData, month };
-
-            await fetch(url, {
-                method,
+            await fetch('/api/meals', {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
+                body: JSON.stringify({ ...mealData, month }),
             });
-
             setIsModalOpen(false);
-            setEditingDeposit(null);
-            fetchDeposits();
+            fetchMeals();
         } catch (error) {
-            console.error('Error saving deposit:', error);
+            console.error('Error saving meal:', error);
         }
     };
 
-    const handleEdit = (deposit) => {
-        setEditingDeposit(deposit);
-        setIsModalOpen(true);
+    const handleEditMeal = async (mealData) => {
+        try {
+            await fetch('/api/meals', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(mealData),
+            });
+            setIsEditModalOpen(false);
+            setEditingMeal(null);
+            fetchMeals();
+        } catch (error) {
+            console.error('Error updating meal:', error);
+        }
+    };
+
+    const handleEdit = (meal) => {
+        setEditingMeal(meal);
+        setIsEditModalOpen(true);
     };
 
     const handleDelete = async (id) => {
         try {
-            await fetch(`/api/deposits?id=${id}`, {
+            await fetch(`/api/meals?id=${id}`, {
                 method: 'DELETE',
             });
             setDeleteConfirm({ isOpen: false, id: null });
-            fetchDeposits();
+            fetchMeals();
         } catch (error) {
-            console.error('Error deleting deposit:', error);
+            console.error('Error deleting meal:', error);
         }
-    };
-
-    const openAddModal = () => {
-        setEditingDeposit(null);
-        setIsModalOpen(true);
     };
 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold text-primary">Deposit History</h1>
+                <h1 className="text-3xl font-bold text-primary">Meal History</h1>
                 <div className="flex items-center gap-3">
+                    <select
+                        value={selectedMember}
+                        onChange={(e) => setSelectedMember(e.target.value)}
+                        className="rounded-md border border-input bg-background px-3 py-2 text-foreground focus:border-primary focus:ring-1 focus:ring-primary"
+                    >
+                        <option value="">All Members</option>
+                        {members.map((member) => (
+                            <option key={member._id} value={member._id}>
+                                {member.name}
+                            </option>
+                        ))}
+                    </select>
                     <input
                         type="month"
                         value={month}
@@ -102,7 +123,7 @@ export default function DepositHistoryPage() {
                         className="rounded-md border border-input bg-background px-3 py-2 text-foreground focus:border-primary focus:ring-1 focus:ring-primary"
                     />
                     <button
-                        onClick={openAddModal}
+                        onClick={() => setIsModalOpen(true)}
                         className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
                     >
                         <Plus className="h-4 w-4" /> Add New
@@ -117,32 +138,32 @@ export default function DepositHistoryPage() {
                             <tr>
                                 <th className="px-6 py-3 font-medium">Date</th>
                                 <th className="px-6 py-3 font-medium">Member</th>
-                                <th className="px-6 py-3 font-medium text-right">Amount</th>
+                                <th className="px-6 py-3 font-medium text-right">Count</th>
                                 <th className="px-6 py-3 font-medium text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
                             {loading ? (
                                 <tr><td colSpan="4" className="p-4 text-center">Loading...</td></tr>
-                            ) : deposits.length === 0 ? (
-                                <tr><td colSpan="4" className="p-4 text-center text-muted-foreground">No deposits found for this month.</td></tr>
+                            ) : meals.length === 0 ? (
+                                <tr><td colSpan="4" className="p-4 text-center text-muted-foreground">No meals found for this month.</td></tr>
                             ) : (
-                                deposits.map((deposit) => (
-                                    <tr key={deposit._id} className="hover:bg-muted/10">
-                                        <td className="px-6 py-4">{new Date(deposit.date).toLocaleDateString()}</td>
-                                        <td className="px-6 py-4 font-medium">{deposit.memberId?.name || 'N/A'}</td>
-                                        <td className="px-6 py-4 text-right font-medium">৳{deposit.amount.toFixed(0)}</td>
+                                meals.map((meal) => (
+                                    <tr key={meal._id} className="hover:bg-muted/10">
+                                        <td className="px-6 py-4">{new Date(meal.date).toLocaleDateString()}</td>
+                                        <td className="px-6 py-4 font-medium">{meal.memberId?.name || 'Unknown'}</td>
+                                        <td className="px-6 py-4 text-right font-medium">{meal.count}</td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-center gap-2">
                                                 <button
-                                                    onClick={() => handleEdit(deposit)}
+                                                    onClick={() => handleEdit(meal)}
                                                     className="rounded p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
                                                     title="Edit"
                                                 >
                                                     <Edit2 className="h-4 w-4" />
                                                 </button>
                                                 <button
-                                                    onClick={() => setDeleteConfirm({ isOpen: true, id: deposit._id })}
+                                                    onClick={() => setDeleteConfirm({ isOpen: true, id: meal._id })}
                                                     className="rounded p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
                                                     title="Delete"
                                                 >
@@ -158,21 +179,27 @@ export default function DepositHistoryPage() {
                 </div>
             </div>
 
-            <AddDepositModal
+            <AddMealModal
                 isOpen={isModalOpen}
-                onClose={() => {
-                    setIsModalOpen(false);
-                    setEditingDeposit(null);
-                }}
+                onClose={() => setIsModalOpen(false)}
                 members={members}
-                onSave={handleSave}
-                editData={editingDeposit}
+                onSave={handleSaveMeal}
+            />
+
+            <EditMealModal
+                isOpen={isEditModalOpen}
+                onClose={() => {
+                    setIsEditModalOpen(false);
+                    setEditingMeal(null);
+                }}
+                onSave={handleEditMeal}
+                editData={editingMeal}
             />
 
             <ConfirmModal
                 isOpen={deleteConfirm.isOpen}
-                title="Delete Deposit"
-                message="Are you sure you want to delete this deposit entry? This action cannot be undone."
+                title="Delete Meal"
+                message="Are you sure you want to delete this meal entry? This action cannot be undone."
                 onConfirm={() => handleDelete(deleteConfirm.id)}
                 onCancel={() => setDeleteConfirm({ isOpen: false, id: null })}
             />

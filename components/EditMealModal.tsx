@@ -1,10 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import type { Meal } from '@/types';
 
-export default function EditMealModal({ isOpen, onClose, onSave, editData = null }) {
-    const [count, setCount] = useState('');
+interface EditMealModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    onSave: (data: { id: string; count: number }) => void;
+    editData?: Meal | null;
+}
+
+export default function EditMealModal({ isOpen, onClose, onSave, editData }: EditMealModalProps) {
+    const [count, setCount] = useState<string>('');
 
     useEffect(() => {
         if (editData) {
@@ -14,10 +22,10 @@ export default function EditMealModal({ isOpen, onClose, onSave, editData = null
         }
     }, [editData, isOpen]);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         onSave({
-            id: editData?._id,
+            id: editData?._id || '',
             count: Number(count)
         });
         setCount('');
@@ -50,7 +58,7 @@ export default function EditMealModal({ isOpen, onClose, onSave, editData = null
                         <label className="block text-sm font-medium text-muted-foreground">Member</label>
                         <input
                             type="text"
-                            value={editData?.memberId?.name || ''}
+                            value={typeof editData?.memberId === 'object' ? (editData.memberId as any).name : ''}
                             disabled
                             className="mt-1 block w-full rounded-md border border-input bg-muted px-3 py-2 text-muted-foreground cursor-not-allowed"
                         />

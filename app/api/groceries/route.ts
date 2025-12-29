@@ -1,8 +1,10 @@
 import dbConnect from '@/lib/db';
 import Grocery from '@/models/Grocery';
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import type { ApiResponse, Grocery as GroceryType } from '@/types';
 
-export async function GET(request) {
+export async function GET(request: NextRequest): Promise<NextResponse<ApiResponse<GroceryType[]>>> {
     await dbConnect();
     const { searchParams } = new URL(request.url);
     const month = searchParams.get('month');
@@ -18,22 +20,22 @@ export async function GET(request) {
             .sort({ date: -1 });
         return NextResponse.json({ success: true, data: groceries });
     } catch (error) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+        return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'An error occurred' }, { status: 400 });
     }
 }
 
-export async function POST(request) {
+export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse<GroceryType>>> {
     await dbConnect();
     try {
         const body = await request.json();
         const grocery = await Grocery.create(body);
         return NextResponse.json({ success: true, data: grocery }, { status: 201 });
     } catch (error) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+        return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'An error occurred' }, { status: 400 });
     }
 }
 
-export async function PUT(request) {
+export async function PUT(request: NextRequest): Promise<NextResponse<ApiResponse<GroceryType>>> {
     await dbConnect();
     try {
         const body = await request.json();
@@ -51,11 +53,11 @@ export async function PUT(request) {
 
         return NextResponse.json({ success: true, data: grocery });
     } catch (error) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+        return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'An error occurred' }, { status: 400 });
     }
 }
 
-export async function DELETE(request) {
+export async function DELETE(request: NextRequest): Promise<NextResponse<ApiResponse<null>>> {
     await dbConnect();
     try {
         const { searchParams } = new URL(request.url);
@@ -71,8 +73,8 @@ export async function DELETE(request) {
             return NextResponse.json({ success: false, error: 'Grocery not found' }, { status: 404 });
         }
 
-        return NextResponse.json({ success: true, data: {} });
+        return NextResponse.json({ success: true });
     } catch (error) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+        return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'An error occurred' }, { status: 400 });
     }
 }

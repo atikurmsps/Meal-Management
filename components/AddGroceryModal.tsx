@@ -1,20 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import type { AddGroceryModalProps, Grocery } from '@/types';
 
-export default function AddGroceryModal({ isOpen, onClose, onSave, members = [], editData = null }) {
-    const [description, setDescription] = useState('');
-    const [amount, setAmount] = useState('');
-    const [doneBy, setDoneBy] = useState('');
-    const [note, setNote] = useState('');
-    const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+interface ExtendedAddGroceryModalProps extends AddGroceryModalProps {
+    editData?: Grocery | null;
+}
+
+export default function AddGroceryModal({ isOpen, onClose, onSave, members, editData }: ExtendedAddGroceryModalProps) {
+    const [description, setDescription] = useState<string>('');
+    const [amount, setAmount] = useState<string>('');
+    const [doneBy, setDoneBy] = useState<string>('');
+    const [note, setNote] = useState<string>('');
+    const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
 
     useEffect(() => {
         if (editData) {
             setDescription(editData.description || '');
             setAmount(editData.amount?.toString() || '');
-            setDoneBy(editData.doneBy?._id || editData.doneBy || '');
+            setDoneBy(typeof editData.doneBy === 'object' ? (editData.doneBy as any)._id : editData.doneBy || '');
             setNote(editData.note || '');
             setDate(editData.date ? new Date(editData.date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10));
         } else {
@@ -26,10 +31,9 @@ export default function AddGroceryModal({ isOpen, onClose, onSave, members = [],
         }
     }, [editData, isOpen]);
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         onSave({
-            id: editData?._id,
             description,
             amount: Number(amount),
             doneBy,
@@ -114,7 +118,7 @@ export default function AddGroceryModal({ isOpen, onClose, onSave, members = [],
                         <textarea
                             value={note}
                             onChange={(e) => setNote(e.target.value)}
-                            rows="3"
+                            rows={3}
                             className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-foreground focus:border-primary focus:ring-1 focus:ring-primary"
                         />
                     </div>

@@ -1,8 +1,10 @@
 import dbConnect from '@/lib/db';
 import Meal from '@/models/Meal';
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import type { ApiResponse, Meal as MealType } from '@/types';
 
-export async function GET(request) {
+export async function GET(request: NextRequest): Promise<NextResponse<ApiResponse<MealType[]>>> {
     await dbConnect();
     const { searchParams } = new URL(request.url);
     const month = searchParams.get('month');
@@ -13,18 +15,18 @@ export async function GET(request) {
     }
 
     try {
-        const query = { month };
+        const query: { month: string; memberId?: string } = { month };
         if (memberId) {
             query.memberId = memberId;
         }
         const meals = await Meal.find(query).populate('memberId', 'name').sort({ date: -1 });
         return NextResponse.json({ success: true, data: meals });
     } catch (error) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+        return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'An error occurred' }, { status: 400 });
     }
 }
 
-export async function POST(request) {
+export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse<null>>> {
     await dbConnect();
     try {
         const { date, meals, month } = await request.json();
@@ -34,7 +36,7 @@ export async function POST(request) {
         // Or just upsert?
         // Strategy: Loop through meals and upsert.
 
-        const operations = meals.map(async (meal) => {
+        const operations = meals.map(async (meal: { memberId: string; count: number }) => {
             if (meal.count > 0) {
                 return Meal.findOneAndUpdate(
                     { date: date, memberId: meal.memberId },
@@ -51,11 +53,11 @@ export async function POST(request) {
 
         return NextResponse.json({ success: true });
     } catch (error) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+        return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'An error occurred' }, { status: 400 });
     }
 }
 
-export async function PUT(request) {
+export async function PUT(request: NextRequest): Promise<NextResponse<ApiResponse<null>>> {
     await dbConnect();
     try {
         const body = await request.json();
@@ -73,11 +75,11 @@ export async function PUT(request) {
 
         return NextResponse.json({ success: true, data: meal });
     } catch (error) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+        return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'An error occurred' }, { status: 400 });
     }
 }
 
-export async function DELETE(request) {
+export async function DELETE(request: NextRequest): Promise<NextResponse<ApiResponse<null>>> {
     await dbConnect();
     try {
         const { searchParams } = new URL(request.url);
@@ -93,8 +95,8 @@ export async function DELETE(request) {
             return NextResponse.json({ success: false, error: 'Meal not found' }, { status: 404 });
         }
 
-        return NextResponse.json({ success: true, data: {} });
+        return NextResponse.json({ success: true });
     } catch (error) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 400 });
+        return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'An error occurred' }, { status: 400 });
     }
 }

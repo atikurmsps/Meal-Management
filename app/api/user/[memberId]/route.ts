@@ -5,18 +5,18 @@ import Grocery from '@/models/Grocery';
 import Expense from '@/models/Expense';
 import Deposit from '@/models/Deposit';
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import type { MemberProfileData, MemberExpense, ApiResponse } from '@/types';
 
-export async function GET(request, { params }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ memberId: string }> }): Promise<NextResponse<ApiResponse<MemberProfileData>>> {
     try {
         console.log('API Route called with URL:', request.url);
-        console.log('API Route - params:', params);
-        console.log('API Route - params type:', typeof params);
 
         await dbConnect();
 
-        // Handle params - in Next.js 15+, params might be a Promise
-        const resolvedParams = params instanceof Promise ? await params : params;
+        const resolvedParams = await params;
         const { memberId } = resolvedParams;
+        console.log('API Route - memberId:', memberId);
         console.log('API Route - memberId:', memberId);
 
         if (!memberId) {
@@ -57,38 +57,38 @@ export async function GET(request, { params }) {
         ]);
 
         // Calculate totals
-        const totalDeposit = deposits.reduce((sum, dep) => sum + dep.amount, 0);
-        const totalGrocery = groceries.reduce((sum, groc) => sum + groc.amount, 0);
-        const totalMeals = meals.reduce((sum, meal) => sum + meal.count, 0);
+        const totalDeposit = deposits.reduce((sum: number, dep: any) => sum + dep.amount, 0);
+        const totalGrocery = groceries.reduce((sum: number, groc: any) => sum + groc.amount, 0);
+        const totalMeals = meals.reduce((sum: number, meal: any) => sum + meal.count, 0);
 
         // Calculate meal rate
-        const allMealsCount = allMeals.reduce((sum, meal) => sum + meal.count, 0);
-        const allGroceriesAmount = allGroceries.reduce((sum, groc) => sum + groc.amount, 0);
+        const allMealsCount = allMeals.reduce((sum: number, meal: any) => sum + meal.count, 0);
+        const allGroceriesAmount = allGroceries.reduce((sum: number, groc: any) => sum + groc.amount, 0);
         const mealRate = allMealsCount > 0 ? allGroceriesAmount / allMealsCount : 0;
 
         const totalMealBill = totalMeals * mealRate;
 
         // Calculate expense balance
         const memberExpensePaid = expenses
-            .filter(exp => exp.paidBy && exp.paidBy._id.toString() === memberId)
-            .reduce((sum, exp) => sum + exp.amount, 0);
+            .filter((exp: any) => exp.paidBy && exp.paidBy._id.toString() === memberId)
+            .reduce((sum: number, exp: any) => sum + exp.amount, 0);
 
         const memberExpenseShare = expenses
-            .filter(exp => exp.splitAmong && exp.splitAmong.some(m => m._id.toString() === memberId))
-            .reduce((sum, exp) => sum + (exp.amount / exp.splitAmong.length), 0);
+            .filter((exp: any) => exp.splitAmong && exp.splitAmong.some((m: any) => m._id.toString() === memberId))
+            .reduce((sum: number, exp: any) => sum + (exp.amount / exp.splitAmong.length), 0);
 
         const expenseBalance = memberExpensePaid - memberExpenseShare;
         const currentBalance = totalDeposit - totalMealBill;
 
         // Filter expenses for this member
-        const memberExpenses = expenses
-            .filter(exp =>
+        const memberExpenses: MemberExpense[] = expenses
+            .filter((exp: any) =>
                 (exp.paidBy && exp.paidBy._id.toString() === memberId) ||
-                (exp.splitAmong && exp.splitAmong.some(m => m._id.toString() === memberId))
+                (exp.splitAmong && exp.splitAmong.some((m: any) => m._id.toString() === memberId))
             )
-            .map(exp => {
+            .map((exp: any) => {
                 const paid = exp.paidBy && exp.paidBy._id.toString() === memberId ? exp.amount : 0;
-                const share = exp.splitAmong && exp.splitAmong.some(m => m._id.toString() === memberId)
+                const share = exp.splitAmong && exp.splitAmong.some((m: any) => m._id.toString() === memberId)
                     ? exp.amount / exp.splitAmong.length
                     : 0;
                 return {
@@ -98,7 +98,7 @@ export async function GET(request, { params }) {
                     memberBalance: paid - share
                 };
             })
-            .sort((a, b) => new Date(b.date) - new Date(a.date));
+            .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
         return NextResponse.json({
             success: true,
@@ -125,9 +125,9 @@ export async function GET(request, { params }) {
         });
     } catch (error) {
         console.error('Error in member API:', error);
-        return NextResponse.json({ 
-            success: false, 
-            error: error.message || 'An error occurred while fetching member data' 
+        return NextResponse.json({
+            success: false,
+            error: error instanceof Error ? error.message : 'An error occurred while fetching member data'
         }, { status: 500 });
     }
 }

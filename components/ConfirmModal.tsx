@@ -1,8 +1,9 @@
 'use client';
 
 import { X } from 'lucide-react';
+import type { ConfirmModalProps } from '@/types';
 
-export default function ConfirmModal({ isOpen, onClose, onConfirm, title, message }) {
+export default function ConfirmModal({ isOpen, onClose, onConfirm, title, message, onCancel }: ConfirmModalProps) {
     if (!isOpen) return null;
 
     return (
@@ -22,7 +23,7 @@ export default function ConfirmModal({ isOpen, onClose, onConfirm, title, messag
                 <div className="flex justify-end space-x-2">
                     <button
                         type="button"
-                        onClick={onClose}
+                        onClick={onCancel || onClose}
                         className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
                     >
                         Cancel

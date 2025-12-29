@@ -6,6 +6,7 @@ import { LayoutDashboard, Settings, ShoppingCart, Wallet, Utensils, Receipt } fr
 import { clsx } from 'clsx';
 import { useState, useEffect, memo } from 'react';
 import ConfirmModal from './ConfirmModal';
+import type { ConfirmModalProps } from '@/types';
 
 const navItems = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -37,7 +38,7 @@ function SidebarComponent() {
         fetchSettings();
     }, []);
 
-    const handleMonthChange = (e) => {
+    const handleMonthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const newMonth = e.target.value;
         setPendingMonth(newMonth);
         setShowConfirmModal(true);

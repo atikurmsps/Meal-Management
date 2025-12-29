@@ -4,15 +4,16 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import AddExpenseModal from '@/components/AddExpenseModal';
 import ConfirmModal from '@/components/ConfirmModal';
+import type { Expense, Member, ApiResponse } from '@/types';
 
 export default function ExpenseHistoryPage() {
-    const [expenses, setExpenses] = useState([]);
-    const [members, setMembers] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingExpense, setEditingExpense] = useState(null);
-    const [deleteConfirm, setDeleteConfirm] = useState({ isOpen: false, id: null });
+    const [expenses, setExpenses] = useState<Expense[]>([]);
+    const [members, setMembers] = useState<Member[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [month, setMonth] = useState<string>(new Date().toISOString().slice(0, 7));
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+    const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+    const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
     const fetchExpenses = useCallback(async () => {
         setLoading(true);
@@ -46,18 +47,12 @@ export default function ExpenseHistoryPage() {
         fetchMembers();
     }, [fetchExpenses, fetchMembers]);
 
-    const handleSave = async (expenseData) => {
+    const handleSave = async (expenseData: { paidBy: string; splitAmong: string[]; description: string; amount: number; date: string }) => {
         try {
-            const url = '/api/expenses';
-            const method = expenseData.id ? 'PUT' : 'POST';
-            const body = expenseData.id
-                ? expenseData
-                : { ...expenseData, month };
-
-            await fetch(url, {
-                method,
+            await fetch('/api/expenses', {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
+                body: JSON.stringify({ ...expenseData, month }),
             });
 
             setIsModalOpen(false);
@@ -68,7 +63,7 @@ export default function ExpenseHistoryPage() {
         }
     };
 
-    const handleEdit = (expense) => {
+    const handleEdit = (expense: Expense) => {
         setEditingExpense(expense);
         setIsModalOpen(true);
     };
