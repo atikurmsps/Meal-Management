@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 import AddMealModal from '@/components/AddMealModal';
-import EditMealModal from '@/components/EditMealModal';
 import ConfirmModal from '@/components/ConfirmModal';
 import type { Meal, Member, ApiResponse } from '@/types';
 
@@ -14,8 +13,6 @@ export default function MealHistoryPage() {
     const [month, setMonth] = useState<string>(new Date().toISOString().slice(0, 7));
     const [selectedMember, setSelectedMember] = useState<string>('');
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
-    const [editingMeal, setEditingMeal] = useState<Meal | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
     const fetchMeals = useCallback(async () => {
@@ -67,27 +64,7 @@ export default function MealHistoryPage() {
         }
     };
 
-    const handleEditMeal = async (mealData) => {
-        try {
-            await fetch('/api/meals', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(mealData),
-            });
-            setIsEditModalOpen(false);
-            setEditingMeal(null);
-            fetchMeals();
-        } catch (error) {
-            console.error('Error updating meal:', error);
-        }
-    };
-
-    const handleEdit = (meal) => {
-        setEditingMeal(meal);
-        setIsEditModalOpen(true);
-    };
-
-    const handleDelete = async (id) => {
+    const handleDelete = async (id: string) => {
         try {
             await fetch(`/api/meals?id=${id}`, {
                 method: 'DELETE',
@@ -144,24 +121,17 @@ export default function MealHistoryPage() {
                         </thead>
                         <tbody className="divide-y divide-border">
                             {loading ? (
-                                <tr><td colSpan="4" className="p-4 text-center">Loading...</td></tr>
+                                <tr><td colSpan={4} className="p-4 text-center">Loading...</td></tr>
                             ) : meals.length === 0 ? (
-                                <tr><td colSpan="4" className="p-4 text-center text-muted-foreground">No meals found for this month.</td></tr>
+                                <tr><td colSpan={4} className="p-4 text-center text-muted-foreground">No meals found for this month.</td></tr>
                             ) : (
                                 meals.map((meal) => (
                                     <tr key={meal._id} className="hover:bg-muted/10">
                                         <td className="px-6 py-4">{new Date(meal.date).toLocaleDateString()}</td>
-                                        <td className="px-6 py-4 font-medium">{meal.memberId?.name || 'Unknown'}</td>
+                                        <td className="px-6 py-4 font-medium">{typeof meal.memberId === 'object' ? (meal.memberId as any).name : 'Unknown'}</td>
                                         <td className="px-6 py-4 text-right font-medium">{meal.count}</td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-center gap-2">
-                                                <button
-                                                    onClick={() => handleEdit(meal)}
-                                                    className="rounded p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
-                                                    title="Edit"
-                                                >
-                                                    <Edit2 className="h-4 w-4" />
-                                                </button>
                                                 <button
                                                     onClick={() => setDeleteConfirm({ isOpen: true, id: meal._id })}
                                                     className="rounded p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
@@ -186,22 +156,12 @@ export default function MealHistoryPage() {
                 onSave={handleSaveMeal}
             />
 
-            <EditMealModal
-                isOpen={isEditModalOpen}
-                onClose={() => {
-                    setIsEditModalOpen(false);
-                    setEditingMeal(null);
-                }}
-                onSave={handleEditMeal}
-                editData={editingMeal}
-            />
-
             <ConfirmModal
                 isOpen={deleteConfirm.isOpen}
+                onClose={() => setDeleteConfirm({ isOpen: false, id: null })}
                 title="Delete Meal"
                 message="Are you sure you want to delete this meal entry? This action cannot be undone."
-                onConfirm={() => handleDelete(deleteConfirm.id)}
-                onCancel={() => setDeleteConfirm({ isOpen: false, id: null })}
+                onConfirm={() => deleteConfirm.id && handleDelete(deleteConfirm.id)}
             />
         </div>
     );

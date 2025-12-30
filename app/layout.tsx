@@ -1,12 +1,10 @@
 import './globals.css';
-import Sidebar from '@/components/Sidebar';
+import { AuthProvider } from '@/components/AuthProvider';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Meal Management',
   description: 'Bachelor Shared House Meal Management',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
-  themeColor: '#059669',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
@@ -14,6 +12,14 @@ export const metadata: Metadata = {
     title: 'Meal Manager',
   },
 };
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+};
+
+export const themeColor = '#059669';
 
 export default function RootLayout({
   children,
@@ -32,13 +38,10 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <meta name="theme-color" content="#059669" />
       </head>
-      <body className="flex h-screen overflow-hidden bg-background text-foreground antialiased font-sans">
-        <Sidebar />
-        <main className="flex-1 overflow-y-auto">
-          <div className="container mx-auto px-6 py-8 max-w-7xl">
-            {children}
-          </div>
-        </main>
+      <body className="bg-background text-foreground antialiased font-sans">
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

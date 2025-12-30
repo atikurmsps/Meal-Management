@@ -49,16 +49,10 @@ export default function GroceryHistoryPage() {
 
     const handleSave = async (groceryData: { doneBy: string; description: string; amount: number; note?: string; date: string }) => {
         try {
-            const url = '/api/groceries';
-            const method = groceryData.id ? 'PUT' : 'POST';
-            const body = groceryData.id
-                ? groceryData
-                : { ...groceryData, month };
-
-            await fetch(url, {
-                method,
+            await fetch('/api/groceries', {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body),
+                body: JSON.stringify({ ...groceryData, month }),
             });
 
             setIsModalOpen(false);
@@ -69,12 +63,12 @@ export default function GroceryHistoryPage() {
         }
     };
 
-    const handleEdit = (grocery) => {
+    const handleEdit = (grocery: Grocery) => {
         setEditingGrocery(grocery);
         setIsModalOpen(true);
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = async (id: string) => {
         try {
             await fetch(`/api/groceries?id=${id}`, {
                 method: 'DELETE',
@@ -126,15 +120,15 @@ export default function GroceryHistoryPage() {
                         </thead>
                         <tbody className="divide-y divide-border">
                             {loading ? (
-                                <tr><td colSpan="6" className="p-4 text-center">Loading...</td></tr>
+                                <tr><td colSpan={6} className="p-4 text-center">Loading...</td></tr>
                             ) : groceries.length === 0 ? (
-                                <tr><td colSpan="6" className="p-4 text-center text-muted-foreground">No groceries found for this month.</td></tr>
+                                <tr><td colSpan={6} className="p-4 text-center text-muted-foreground">No groceries found for this month.</td></tr>
                             ) : (
                                 groceries.map((grocery) => (
                                     <tr key={grocery._id} className="hover:bg-muted/10">
                                         <td className="px-6 py-4">{new Date(grocery.date).toLocaleDateString()}</td>
                                         <td className="px-6 py-4 font-medium">{grocery.description}</td>
-                                        <td className="px-6 py-4">{grocery.doneBy?.name || '-'}</td>
+                                        <td className="px-6 py-4">{typeof grocery.doneBy === 'object' ? (grocery.doneBy as any).name : '-'}</td>
                                         <td className="px-6 py-4 text-muted-foreground">{grocery.note}</td>
                                         <td className="px-6 py-4 text-right font-medium">৳{grocery.amount.toFixed(0)}</td>
                                         <td className="px-6 py-4">
@@ -176,10 +170,10 @@ export default function GroceryHistoryPage() {
 
             <ConfirmModal
                 isOpen={deleteConfirm.isOpen}
+                onClose={() => setDeleteConfirm({ isOpen: false, id: null })}
                 title="Delete Grocery"
                 message="Are you sure you want to delete this grocery entry? This action cannot be undone."
-                onConfirm={() => handleDelete(deleteConfirm.id)}
-                onCancel={() => setDeleteConfirm({ isOpen: false, id: null })}
+                onConfirm={() => deleteConfirm.id && handleDelete(deleteConfirm.id)}
             />
         </div>
     );

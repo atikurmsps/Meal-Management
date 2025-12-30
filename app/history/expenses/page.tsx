@@ -68,7 +68,7 @@ export default function ExpenseHistoryPage() {
         setIsModalOpen(true);
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = async (id: string) => {
         try {
             await fetch(`/api/expenses?id=${id}`, {
                 method: 'DELETE',
@@ -125,11 +125,11 @@ export default function ExpenseHistoryPage() {
                         <tbody className="divide-y divide-border">
                             {members.map((member) => {
                                 const paid = expenses
-                                    .filter(exp => exp.paidBy?._id === member._id)
+                                    .filter(exp => (typeof exp.paidBy === 'object' ? (exp.paidBy as any)._id : exp.paidBy) === member._id)
                                     .reduce((sum, exp) => sum + exp.amount, 0);
 
                                 const share = expenses
-                                    .filter(exp => exp.splitAmong?.some(m => m._id === member._id))
+                                    .filter(exp => exp.splitAmong?.some((m: any) => (typeof m === 'object' ? m._id : m) === member._id))
                                     .reduce((sum, exp) => sum + (exp.amount / exp.splitAmong.length), 0);
 
                                 const balance = paid - share;
@@ -170,21 +170,21 @@ export default function ExpenseHistoryPage() {
                         </thead>
                         <tbody className="divide-y divide-border">
                             {loading ? (
-                                <tr><td colSpan="7" className="p-4 text-center">Loading...</td></tr>
+                                <tr><td colSpan={7} className="p-4 text-center">Loading...</td></tr>
                             ) : expenses.length === 0 ? (
-                                <tr><td colSpan="7" className="p-4 text-center text-muted-foreground">No expenses found for this month.</td></tr>
+                                <tr><td colSpan={7} className="p-4 text-center text-muted-foreground">No expenses found for this month.</td></tr>
                             ) : (
                                 expenses.map((expense) => (
                                     <tr key={expense._id} className="hover:bg-muted/10">
                                         <td className="px-6 py-4">{new Date(expense.date).toLocaleDateString()}</td>
                                         <td className="px-6 py-4 font-medium">{expense.description}</td>
-                                        <td className="px-6 py-4">{expense.paidBy?.name || 'N/A'}</td>
+                                        <td className="px-6 py-4">{typeof expense.paidBy === 'object' ? (expense.paidBy as any).name : 'N/A'}</td>
                                         <td className="px-6 py-4 text-sm">
                                             {expense.splitAmong?.length > 0 ? (
                                                 <div className="flex flex-wrap gap-1">
-                                                    {expense.splitAmong.map((member, idx) => (
+                                                    {expense.splitAmong.map((member: any, idx) => (
                                                         <span key={idx} className="inline-block px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
-                                                            {member.name}
+                                                            {typeof member === 'object' ? member.name : member}
                                                         </span>
                                                     ))}
                                                 </div>
@@ -238,10 +238,10 @@ export default function ExpenseHistoryPage() {
 
             <ConfirmModal
                 isOpen={deleteConfirm.isOpen}
+                onClose={() => setDeleteConfirm({ isOpen: false, id: null })}
                 title="Delete Expense"
                 message="Are you sure you want to delete this expense entry? This action cannot be undone."
-                onConfirm={() => handleDelete(deleteConfirm.id)}
-                onCancel={() => setDeleteConfirm({ isOpen: false, id: null })}
+                onConfirm={() => deleteConfirm.id && handleDelete(deleteConfirm.id)}
             />
         </div>
     );

@@ -54,6 +54,60 @@ export interface Settings {
   currentMonth: string;
 }
 
+// User and Authentication Types
+export type UserRole = 'general' | 'manager' | 'super';
+
+export interface User {
+  _id: string;
+  phoneNumber: string;
+  name: string;
+  role: UserRole;
+  assignedMonth?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuthUser {
+  _id: string;
+  phoneNumber: string;
+  name: string;
+  role: UserRole;
+  assignedMonth?: string;
+}
+
+export interface LoginRequest {
+  phoneNumber: string;
+  password: string;
+}
+
+export interface SignupRequest {
+  phoneNumber: string;
+  password: string;
+  name: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface UpdateUserRoleRequest {
+  userId: string;
+  role: UserRole;
+  assignedMonth?: string;
+}
+
+// Permission Types
+export interface UserPermissions {
+  canViewAll: boolean;
+  canManageMembers: boolean;
+  canManageData: boolean;
+  canManageCurrentMonth: boolean;
+  canManageAssignedMonth: boolean;
+  assignedMonth?: string;
+}
+
 // Dashboard Data Types
 export interface MemberStats {
   _id: string;
