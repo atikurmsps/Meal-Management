@@ -4,13 +4,23 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import AddGroceryModal from '@/components/AddGroceryModal';
 import ConfirmModal from '@/components/ConfirmModal';
+import { useAuth } from '@/components/AuthProvider';
 import type { Grocery, Member, ApiResponse } from '@/types';
 
 export default function GroceryHistoryPage() {
+    const { user, permissions } = useAuth();
+    
+    // Helper function to check if user can manage this month
+    const canManageThisMonth = (monthToCheck: string) => {
+        if (!user) return false;
+        if (user.role === 'super') return true;
+        if (user.role === 'manager' && user.assignedMonth === monthToCheck) return true;
+        return false;
+    };
     const [groceries, setGroceries] = useState<Grocery[]>([]);
     const [members, setMembers] = useState<Member[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
-    const [month, setMonth] = useState<string>(new Date().toISOString().slice(0, 7));
+    const [month, setMonth] = useState<string>('');
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [editingGrocery, setEditingGrocery] = useState<Grocery | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
@@ -18,10 +28,15 @@ export default function GroceryHistoryPage() {
     const fetchGroceries = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/groceries?month=${month}`);
+            // Fetch all groceries, then filter by current month for display
+            const res = await fetch('/api/groceries');
             const data = await res.json();
-            if (data.success) {
-                setGroceries(data.data);
+            if (data.success && data.data) {
+                // Filter by current month from settings for display
+                const filteredGroceries = month 
+                    ? data.data.filter((grocery: Grocery) => grocery.month === month)
+                    : data.data;
+                setGroceries(filteredGroceries);
             }
         } catch (error) {
             console.error('Error fetching groceries:', error);
@@ -42,17 +57,42 @@ export default function GroceryHistoryPage() {
         }
     }, []);
 
+    const fetchCurrentMonth = useCallback(async () => {
+        try {
+            const res = await fetch('/api/settings');
+            const data = await res.json();
+            if (data.success && data.data.currentMonth) {
+                setMonth(data.data.currentMonth);
+            } else {
+                // Fallback to current month if settings not found
+                setMonth(new Date().toISOString().slice(0, 7));
+            }
+        } catch (error) {
+            console.error('Error fetching current month:', error);
+            // Fallback to current month on error
+            setMonth(new Date().toISOString().slice(0, 7));
+        }
+    }, []);
+
     useEffect(() => {
-        fetchGroceries();
+        fetchCurrentMonth();
         fetchMembers();
-    }, [fetchGroceries, fetchMembers]);
+    }, [fetchCurrentMonth, fetchMembers]);
+
+    useEffect(() => {
+        if (month) {
+            fetchGroceries();
+        }
+    }, [month, fetchGroceries]);
 
     const handleSave = async (groceryData: { doneBy: string; description: string; amount: number; note?: string; date: string }) => {
         try {
+            // Extract month from the date (YYYY-MM-DD -> YYYY-MM)
+            const monthFromDate = groceryData.date.slice(0, 7);
             await fetch('/api/groceries', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...groceryData, month }),
+                body: JSON.stringify({ ...groceryData, month: monthFromDate }),
             });
 
             setIsModalOpen(false);
@@ -90,18 +130,14 @@ export default function GroceryHistoryPage() {
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-primary">Grocery History</h1>
                 <div className="flex items-center gap-3">
-                    <input
-                        type="month"
-                        value={month}
-                        onChange={(e) => setMonth(e.target.value)}
-                        className="rounded-md border border-input bg-background px-3 py-2 text-foreground focus:border-primary focus:ring-1 focus:ring-primary"
-                    />
-                    <button
-                        onClick={openAddModal}
-                        className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                    >
-                        <Plus className="h-4 w-4" /> Add New
-                    </button>
+                    {month && canManageThisMonth(month) && (
+                        <button
+                            onClick={openAddModal}
+                            className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                        >
+                            <Plus className="h-4 w-4" /> Add New
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -132,22 +168,24 @@ export default function GroceryHistoryPage() {
                                         <td className="px-6 py-4 text-muted-foreground">{grocery.note}</td>
                                         <td className="px-6 py-4 text-right font-medium">৳{grocery.amount.toFixed(0)}</td>
                                         <td className="px-6 py-4">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <button
-                                                    onClick={() => handleEdit(grocery)}
-                                                    className="rounded p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
-                                                    title="Edit"
-                                                >
-                                                    <Edit2 className="h-4 w-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => setDeleteConfirm({ isOpen: true, id: grocery._id })}
-                                                    className="rounded p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
-                                            </div>
+                                            {canManageThisMonth(month) && (
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <button
+                                                        onClick={() => handleEdit(grocery)}
+                                                        className="rounded p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+                                                        title="Edit"
+                                                    >
+                                                        <Edit2 className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setDeleteConfirm({ isOpen: true, id: grocery._id })}
+                                                        className="rounded p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))
@@ -165,6 +203,7 @@ export default function GroceryHistoryPage() {
                 }}
                 onSave={handleSave}
                 members={members}
+                assignedMonth={user?.assignedMonth}
                 editData={editingGrocery}
             />
 

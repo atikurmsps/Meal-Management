@@ -94,17 +94,9 @@ export default function SettingsPage() {
             return;
         }
 
-        // Check if phone number already exists
-        const trimmedPhone = newUser.phoneNumber.trim();
-        const existingUser = users.find(u => u.phoneNumber.trim() === trimmedPhone);
-        if (existingUser) {
-            const message = `A user with phone number "${trimmedPhone}" already exists.\n\nName: ${existingUser.name}\nRole: ${existingUser.role}\n\nPlease use a different phone number or edit the existing user.`;
-            alert(message);
-            return;
-        }
-
         try {
             // Prepare user data - only include assignedMonth if role is manager
+            const trimmedPhone = newUser.phoneNumber.trim();
             const userData: any = {
                 name: newUser.name.trim(),
                 phoneNumber: trimmedPhone,
@@ -133,7 +125,13 @@ export default function SettingsPage() {
                 
                 // Provide more helpful error messages
                 if (errorMessage.includes('already exists') || errorMessage.includes('duplicate')) {
-                    alert(`Phone number "${trimmedPhone}" is already registered. Please use a different phone number or check the existing users list.`);
+                    // Check if we can find the existing user to show more details
+                    const existingUser = users.find(u => u.phoneNumber.trim() === trimmedPhone);
+                    if (existingUser) {
+                        alert(`Phone number "${trimmedPhone}" is already registered.\n\nExisting user:\nName: ${existingUser.name}\nRole: ${existingUser.role}\n\nPlease use a different phone number or edit the existing user.`);
+                    } else {
+                        alert(`Phone number "${trimmedPhone}" is already registered. Please use a different phone number.`);
+                    }
                 } else {
                     alert(`Failed to add user: ${errorMessage}`);
                 }

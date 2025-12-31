@@ -4,20 +4,46 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import type { AddMealModalProps, Member } from '@/types';
 
-export default function AddMealModal({ isOpen, onClose, members, onSave }: AddMealModalProps) {
-    const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
+export default function AddMealModal({ isOpen, onClose, members, assignedMonth, onSave }: AddMealModalProps) {
+    // For managers, set initial date to first day of assigned month, otherwise use today
+    const getInitialDate = () => {
+        if (assignedMonth) {
+            return `${assignedMonth}-01`;
+        }
+        return new Date().toISOString().slice(0, 10);
+    };
+    
+    const [date, setDate] = useState<string>(getInitialDate());
     const [mealCounts, setMealCounts] = useState<Record<string, string>>({});
+    
+    // Calculate min and max dates for managers
+    const getMinDate = () => {
+        if (assignedMonth) {
+            return `${assignedMonth}-01`;
+        }
+        return undefined;
+    };
+    
+    const getMaxDate = () => {
+        if (assignedMonth) {
+            // Get last day of the assigned month
+            const [year, month] = assignedMonth.split('-');
+            const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
+            return `${assignedMonth}-${lastDay.toString().padStart(2, '0')}`;
+        }
+        return undefined;
+    };
 
     useEffect(() => {
         if (isOpen) {
-            // Reset or fetch existing meals for this date?
-            // For now, just reset to 0 or keep previous state if we want to be fancy.
-            // Let's initialize with 0s or empty.
+            // Reset date to first day of assigned month for managers, or today for others
+            setDate(getInitialDate());
+            // Reset meal counts
             const initialCounts: Record<string, string> = {};
             members.forEach(m => initialCounts[m._id] = '');
             setMealCounts(initialCounts);
         }
-    }, [isOpen, members]);
+    }, [isOpen, members, assignedMonth]);
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -46,10 +72,28 @@ export default function AddMealModal({ isOpen, onClose, members, onSave }: AddMe
                         <input
                             type="date"
                             value={date}
-                            onChange={(e) => setDate(e.target.value)}
+                            onChange={(e) => {
+                                const selectedDate = e.target.value;
+                                // Validate that selected date is within assigned month for managers
+                                if (assignedMonth) {
+                                    const selectedMonth = selectedDate.slice(0, 7);
+                                    if (selectedMonth !== assignedMonth) {
+                                        alert(`You can only add data for ${assignedMonth}. Please select a date within this month.`);
+                                        return;
+                                    }
+                                }
+                                setDate(selectedDate);
+                            }}
+                            min={getMinDate()}
+                            max={getMaxDate()}
                             className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-foreground focus:border-primary focus:ring-1 focus:ring-primary"
                             required
                         />
+                        {assignedMonth && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                                You can only add data for {assignedMonth}
+                            </p>
+                        )}
                     </div>
 
                     <div className="max-h-60 overflow-y-auto space-y-2">

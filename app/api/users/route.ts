@@ -94,6 +94,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       );
     }
 
+    // Ensure phoneNumber is not empty after trimming
+    if (phoneNumber.length === 0) {
+      console.log('Phone number is empty after trimming');
+      return NextResponse.json(
+        { success: false, error: 'Phone number cannot be empty' },
+        { status: 400 }
+      );
+    }
+
     // Check if phone number already exists (using trimmed value)
     // The schema has trim: true, so we need to check with trimmed value
     const trimmedPhoneNumber = phoneNumber.trim();
@@ -142,6 +151,58 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     const hashedPassword = await hashPassword(password);
     console.log('Password hashed successfully');
 
+    // Clean up any users with null/empty phoneNumber before creating new user
+    // This prevents the duplicate key error on the sparse index
+    try {
+      const usersWithNullPhone = await User.find({ 
+        $or: [{ phoneNumber: null }, { phoneNumber: '' }, { phoneNumber: { $exists: false } }] 
+      });
+      
+      if (usersWithNullPhone.length > 0) {
+        console.log(`Found ${usersWithNullPhone.length} users with null/empty phoneNumber. Cleaning up...`);
+        await User.deleteMany({ 
+          $or: [{ phoneNumber: null }, { phoneNumber: '' }, { phoneNumber: { $exists: false } }] 
+        });
+        console.log('Cleaned up users with null phoneNumber.');
+      }
+    } catch (cleanupError) {
+      console.log('Cleanup check failed (this is okay):', cleanupError);
+      // Continue even if cleanup fails
+    }
+
+    // Try to drop old conflicting index if it exists
+    try {
+      const indexes = await User.collection.getIndexes();
+      console.log('Current indexes:', Object.keys(indexes));
+      
+      // Drop phone_1 index if it exists (old index from previous schema)
+      if (indexes.phone_1) {
+        console.log('Found old phone_1 index, attempting to drop it...');
+        try {
+          await User.collection.dropIndex('phone_1');
+          console.log('Successfully dropped old phone_1 index.');
+        } catch (dropError: any) {
+          console.log('Could not drop phone_1 index (may not exist or may be in use):', dropError.message);
+        }
+      }
+      
+      // Also try to drop any index with 'phone' in the name
+      for (const indexName of Object.keys(indexes)) {
+        if (indexName.includes('phone') && indexName !== 'phoneNumber_1') {
+          console.log(`Found index ${indexName}, attempting to drop it...`);
+          try {
+            await User.collection.dropIndex(indexName);
+            console.log(`Successfully dropped index ${indexName}.`);
+          } catch (dropError: any) {
+            console.log(`Could not drop index ${indexName}:`, dropError.message);
+          }
+        }
+      }
+    } catch (indexError) {
+      console.log('Index check failed (this is okay):', indexError);
+      // Continue even if index operations fail
+    }
+
     const userData: any = {
       name: name.trim(),
       phoneNumber: trimmedPhoneNumber, // Use the trimmed version
@@ -164,8 +225,45 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }
 
     console.log('Creating user with data:', { ...userData, password: '[HIDDEN]' });
-    const user = await User.create(userData);
-    console.log('User created successfully:', user._id);
+    
+    let user;
+    try {
+      user = await User.create(userData);
+      console.log('User created successfully:', user._id);
+    } catch (createError: any) {
+      // Handle duplicate key errors more gracefully
+      if (createError.code === 11000 || createError.message?.includes('duplicate key')) {
+        console.log('Duplicate key error detected. Error details:', {
+          code: createError.code,
+          keyPattern: createError.keyPattern,
+          keyValue: createError.keyValue,
+          message: createError.message
+        });
+        
+        // If it's the phone_1 index issue, try to drop it and retry
+        if (createError.keyPattern?.phone || createError.message?.includes('phone_1')) {
+          console.log('Attempting to fix phone_1 index issue...');
+          try {
+            await User.collection.dropIndex('phone_1').catch(() => {});
+            // Clean up null phoneNumber users again
+            await User.deleteMany({ 
+              $or: [{ phoneNumber: null }, { phoneNumber: '' }, { phoneNumber: { $exists: false } }] 
+            });
+            // Retry creating the user
+            user = await User.create(userData);
+            console.log('User created successfully after fixing index issue:', user._id);
+          } catch (retryError: any) {
+            console.error('Retry after index fix failed:', retryError);
+            throw createError; // Throw original error
+          }
+        } else {
+          // Regular duplicate phone number error
+          throw createError;
+        }
+      } else {
+        throw createError;
+      }
+    }
 
     const newUser: UserType = {
       _id: user._id.toString(),

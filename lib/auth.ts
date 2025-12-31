@@ -47,17 +47,27 @@ export function getUserPermissions(user: AuthUser | null, currentMonth: string):
   }
 
   const permissions: UserPermissions = {
-    canViewAll: user.role === 'super' || user.role === 'manager',
+    canViewAll: true, // All authenticated users can view
     canManageMembers: user.role === 'super',
-    canManageData: user.role === 'super',
-    canManageCurrentMonth: user.role === 'super',
+    canManageData: user.role === 'super' || user.role === 'manager', // Super users and managers can manage data
+    canManageCurrentMonth: false, // Will be set based on role and month
     canManageAssignedMonth: false,
     assignedMonth: user.assignedMonth,
   };
 
-  if (user.role === 'manager' && user.assignedMonth) {
+  // Super users can manage any month
+  if (user.role === 'super') {
+    permissions.canManageCurrentMonth = true;
     permissions.canManageAssignedMonth = true;
+  } 
+  // Managers can manage their assigned month
+  else if (user.role === 'manager' && user.assignedMonth) {
+    permissions.canManageAssignedMonth = true;
+    if (user.assignedMonth === currentMonth) {
+      permissions.canManageCurrentMonth = true;
+    }
   }
+  // General users have no management permissions (already set to false above)
 
   return permissions;
 }

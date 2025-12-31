@@ -19,6 +19,7 @@ const UserSchema = new mongoose.Schema<IUser>({
     type: String,
     required: true,
     unique: true,
+    sparse: true, // Allows multiple null values, but enforces uniqueness for non-null values
     trim: true,
   },
   password: {
@@ -55,4 +56,22 @@ const UserSchema = new mongoose.Schema<IUser>({
   timestamps: true,
 });
 
-export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+const UserModel = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+
+// Clean up any existing users with null/empty phoneNumber on model initialization
+// This helps prevent the duplicate key error
+if (mongoose.connection.readyState === 1) {
+  UserModel.find({ $or: [{ phoneNumber: null }, { phoneNumber: '' }] })
+    .then((usersWithNullPhone: any[]) => {
+      if (usersWithNullPhone.length > 0) {
+        console.log(`Found ${usersWithNullPhone.length} users with null/empty phoneNumber. These should be cleaned up.`);
+        // Optionally delete or update these users
+        // For now, we'll just log them
+      }
+    })
+    .catch(() => {
+      // Ignore errors during cleanup check
+    });
+}
+
+export default UserModel;

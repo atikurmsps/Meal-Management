@@ -184,21 +184,25 @@ export interface ModalProps {
 
 export interface AddMealModalProps extends ModalProps {
   members: Member[];
+  assignedMonth?: string; // For managers - restrict date selection to this month
   onSave: (data: { date: string; meals: { memberId: string; count: number }[] }) => void;
 }
 
 export interface AddGroceryModalProps extends ModalProps {
   members: Member[];
+  assignedMonth?: string; // For managers - restrict date selection to this month
   onSave: (data: { doneBy: string; description: string; amount: number; note?: string; date: string }) => void;
 }
 
 export interface AddExpenseModalProps extends ModalProps {
   members: Member[];
+  assignedMonth?: string; // For managers - restrict date selection to this month
   onSave: (data: { paidBy: string; splitAmong: string[]; description: string; amount: number; date: string }) => void;
 }
 
 export interface AddDepositModalProps extends ModalProps {
   members: Member[];
+  assignedMonth?: string; // For managers - restrict date selection to this month
   onSave: (data: { memberId: string; amount: number; date: string }) => void;
 }
 

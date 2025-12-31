@@ -12,6 +12,14 @@ import type { DashboardData, Member, ApiResponse } from '@/types';
 
 export default function Dashboard() {
     const { user, permissions } = useAuth();
+    
+    // Helper function to check if user can manage the current data month
+    const canManageThisMonth = (month: string) => {
+        if (!user) return false;
+        if (user.role === 'super') return true;
+        if (user.role === 'manager' && user.assignedMonth === month) return true;
+        return false;
+    };
     const [data, setData] = useState<DashboardData | null>(null);
     const [members, setMembers] = useState<Member[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
@@ -44,10 +52,12 @@ export default function Dashboard() {
 
     const handleSaveMeal = async (mealData: { date: string; meals: { memberId: string; count: number }[] }) => {
         try {
+            // Extract month from the date (YYYY-MM-DD -> YYYY-MM)
+            const monthFromDate = mealData.date.slice(0, 7);
             await fetch('/api/meals', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...mealData, month: data?.month }),
+                body: JSON.stringify({ ...mealData, month: monthFromDate }),
             });
             setIsMealModalOpen(false);
             fetchData();
@@ -58,10 +68,12 @@ export default function Dashboard() {
 
     const handleSaveGrocery = async (groceryData: { doneBy: string; description: string; amount: number; note?: string; date: string }) => {
         try {
+            // Extract month from the date (YYYY-MM-DD -> YYYY-MM)
+            const monthFromDate = groceryData.date.slice(0, 7);
             await fetch('/api/groceries', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...groceryData, month: data?.month }),
+                body: JSON.stringify({ ...groceryData, month: monthFromDate }),
             });
             setIsGroceryModalOpen(false);
             fetchData();
@@ -72,10 +84,12 @@ export default function Dashboard() {
 
     const handleSaveExpense = async (expenseData: { paidBy: string; splitAmong: string[]; description: string; amount: number; date: string }) => {
         try {
+            // Extract month from the date (YYYY-MM-DD -> YYYY-MM)
+            const monthFromDate = expenseData.date.slice(0, 7);
             await fetch('/api/expenses', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...expenseData, month: data?.month }),
+                body: JSON.stringify({ ...expenseData, month: monthFromDate }),
             });
             setIsExpenseModalOpen(false);
             fetchData();
@@ -86,10 +100,12 @@ export default function Dashboard() {
 
     const handleSaveDeposit = async (depositData: { memberId: string; amount: number; date: string }) => {
         try {
+            // Extract month from the date (YYYY-MM-DD -> YYYY-MM)
+            const monthFromDate = depositData.date.slice(0, 7);
             await fetch('/api/deposits', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...depositData, month: data?.month }),
+                body: JSON.stringify({ ...depositData, month: monthFromDate }),
             });
             setIsDepositModalOpen(false);
             fetchData();
@@ -109,7 +125,7 @@ export default function Dashboard() {
                     <h1 className="text-4xl font-bold text-foreground tracking-tight">Dashboard</h1>
                     <p className="text-muted-foreground text-lg">Overview for {data.month}</p>
                 </div>
-                {(permissions.canManageData || permissions.canManageCurrentMonth) && (
+                {data && canManageThisMonth(data.month) && (
                 <div className="flex flex-wrap gap-3">
                     <button
                         onClick={() => setIsMealModalOpen(true)}
@@ -263,24 +279,28 @@ export default function Dashboard() {
                 isOpen={isMealModalOpen}
                 onClose={() => setIsMealModalOpen(false)}
                 members={members}
+                assignedMonth={user?.assignedMonth}
                 onSave={handleSaveMeal}
             />
             <AddGroceryModal
                 isOpen={isGroceryModalOpen}
                 onClose={() => setIsGroceryModalOpen(false)}
                 members={members}
+                assignedMonth={user?.assignedMonth}
                 onSave={handleSaveGrocery}
             />
             <AddExpenseModal
                 isOpen={isExpenseModalOpen}
                 onClose={() => setIsExpenseModalOpen(false)}
                 members={members}
+                assignedMonth={user?.assignedMonth}
                 onSave={handleSaveExpense}
             />
             <AddDepositModal
                 isOpen={isDepositModalOpen}
                 onClose={() => setIsDepositModalOpen(false)}
                 members={members}
+                assignedMonth={user?.assignedMonth}
                 onSave={handleSaveDeposit}
             />
         </div>

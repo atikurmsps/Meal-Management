@@ -4,13 +4,23 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import AddMealModal from '@/components/AddMealModal';
 import ConfirmModal from '@/components/ConfirmModal';
+import { useAuth } from '@/components/AuthProvider';
 import type { Meal, Member, ApiResponse } from '@/types';
 
 export default function MealHistoryPage() {
+    const { user, permissions } = useAuth();
+    
+    // Helper function to check if user can manage this month
+    const canManageThisMonth = (monthToCheck: string) => {
+        if (!user) return false;
+        if (user.role === 'super') return true;
+        if (user.role === 'manager' && user.assignedMonth === monthToCheck) return true;
+        return false;
+    };
     const [meals, setMeals] = useState<Meal[]>([]);
     const [members, setMembers] = useState<Member[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
-    const [month, setMonth] = useState<string>(new Date().toISOString().slice(0, 7));
+    const [month, setMonth] = useState<string>('');
     const [selectedMember, setSelectedMember] = useState<string>('');
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
@@ -18,13 +28,19 @@ export default function MealHistoryPage() {
     const fetchMeals = useCallback(async () => {
         setLoading(true);
         try {
+            // Fetch all meals, then filter by selected member if needed
+            // The month filter is removed so we show all entries regardless of their month
             const url = selectedMember
-                ? `/api/meals?month=${month}&memberId=${selectedMember}`
-                : `/api/meals?month=${month}`;
+                ? `/api/meals?memberId=${selectedMember}`
+                : `/api/meals`;
             const res = await fetch(url);
             const data = await res.json();
             if (data.success) {
-                setMeals(data.data);
+                // Filter by current month from settings for display
+                const filteredMeals = month 
+                    ? data.data.filter((meal: Meal) => meal.month === month)
+                    : data.data;
+                setMeals(filteredMeals);
             }
         } catch (error) {
             console.error('Error fetching meals:', error);
@@ -45,17 +61,42 @@ export default function MealHistoryPage() {
         }
     }, []);
 
+    const fetchCurrentMonth = useCallback(async () => {
+        try {
+            const res = await fetch('/api/settings');
+            const data = await res.json();
+            if (data.success && data.data.currentMonth) {
+                setMonth(data.data.currentMonth);
+            } else {
+                // Fallback to current month if settings not found
+                setMonth(new Date().toISOString().slice(0, 7));
+            }
+        } catch (error) {
+            console.error('Error fetching current month:', error);
+            // Fallback to current month on error
+            setMonth(new Date().toISOString().slice(0, 7));
+        }
+    }, []);
+
     useEffect(() => {
-        fetchMeals();
+        fetchCurrentMonth();
         fetchMembers();
-    }, [fetchMeals, fetchMembers]);
+    }, [fetchCurrentMonth, fetchMembers]);
+
+    useEffect(() => {
+        if (month) {
+            fetchMeals();
+        }
+    }, [month, fetchMeals]);
 
     const handleSaveMeal = async (mealData: { date: string; meals: { memberId: string; count: number }[] }) => {
         try {
+            // Extract month from the date (YYYY-MM-DD -> YYYY-MM)
+            const monthFromDate = mealData.date.slice(0, 7);
             await fetch('/api/meals', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...mealData, month }),
+                body: JSON.stringify({ ...mealData, month: monthFromDate }),
             });
             setIsModalOpen(false);
             fetchMeals();
@@ -93,18 +134,14 @@ export default function MealHistoryPage() {
                             </option>
                         ))}
                     </select>
-                    <input
-                        type="month"
-                        value={month}
-                        onChange={(e) => setMonth(e.target.value)}
-                        className="rounded-md border border-input bg-background px-3 py-2 text-foreground focus:border-primary focus:ring-1 focus:ring-primary"
-                    />
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                    >
-                        <Plus className="h-4 w-4" /> Add New
-                    </button>
+                    {month && canManageThisMonth(month) && (
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                        >
+                            <Plus className="h-4 w-4" /> Add New
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -131,15 +168,17 @@ export default function MealHistoryPage() {
                                         <td className="px-6 py-4 font-medium">{typeof meal.memberId === 'object' && meal.memberId !== null ? (meal.memberId as any).name : 'Unknown'}</td>
                                         <td className="px-6 py-4 text-right font-medium">{meal.count}</td>
                                         <td className="px-6 py-4">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <button
-                                                    onClick={() => setDeleteConfirm({ isOpen: true, id: meal._id })}
-                                                    className="rounded p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
-                                            </div>
+                                            {canManageThisMonth(month) && (
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <button
+                                                        onClick={() => setDeleteConfirm({ isOpen: true, id: meal._id })}
+                                                        className="rounded p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))
@@ -153,6 +192,7 @@ export default function MealHistoryPage() {
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 members={members}
+                assignedMonth={user?.assignedMonth}
                 onSave={handleSaveMeal}
             />
 

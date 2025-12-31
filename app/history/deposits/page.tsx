@@ -4,13 +4,23 @@ import { useState, useEffect, useCallback } from 'react';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import AddDepositModal from '@/components/AddDepositModal';
 import ConfirmModal from '@/components/ConfirmModal';
+import { useAuth } from '@/components/AuthProvider';
 import type { Deposit, Member, ApiResponse } from '@/types';
 
 export default function DepositHistoryPage() {
+    const { user, permissions } = useAuth();
+    
+    // Helper function to check if user can manage this month
+    const canManageThisMonth = (monthToCheck: string) => {
+        if (!user) return false;
+        if (user.role === 'super') return true;
+        if (user.role === 'manager' && user.assignedMonth === monthToCheck) return true;
+        return false;
+    };
     const [deposits, setDeposits] = useState<Deposit[]>([]);
     const [members, setMembers] = useState<Member[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
-    const [month, setMonth] = useState<string>(new Date().toISOString().slice(0, 7));
+    const [month, setMonth] = useState<string>('');
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const [editingDeposit, setEditingDeposit] = useState<Deposit | null>(null);
     const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
@@ -18,10 +28,15 @@ export default function DepositHistoryPage() {
     const fetchDeposits = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/deposits?month=${month}`);
+            // Fetch all deposits, then filter by current month for display
+            const res = await fetch('/api/deposits');
             const data: ApiResponse<Deposit[]> = await res.json();
             if (data.success && data.data) {
-                setDeposits(data.data);
+                // Filter by current month from settings for display
+                const filteredDeposits = month 
+                    ? data.data.filter((deposit: Deposit) => deposit.month === month)
+                    : data.data;
+                setDeposits(filteredDeposits);
             }
         } catch (error) {
             console.error('Error fetching deposits:', error);
@@ -42,17 +57,42 @@ export default function DepositHistoryPage() {
         }
     }, []);
 
+    const fetchCurrentMonth = useCallback(async () => {
+        try {
+            const res = await fetch('/api/settings');
+            const data = await res.json();
+            if (data.success && data.data.currentMonth) {
+                setMonth(data.data.currentMonth);
+            } else {
+                // Fallback to current month if settings not found
+                setMonth(new Date().toISOString().slice(0, 7));
+            }
+        } catch (error) {
+            console.error('Error fetching current month:', error);
+            // Fallback to current month on error
+            setMonth(new Date().toISOString().slice(0, 7));
+        }
+    }, []);
+
     useEffect(() => {
-        fetchDeposits();
+        fetchCurrentMonth();
         fetchMembers();
-    }, [fetchDeposits, fetchMembers]);
+    }, [fetchCurrentMonth, fetchMembers]);
+
+    useEffect(() => {
+        if (month) {
+            fetchDeposits();
+        }
+    }, [month, fetchDeposits]);
 
     const handleSave = async (depositData: { memberId: string; amount: number; date: string }) => {
         try {
+            // Extract month from the date (YYYY-MM-DD -> YYYY-MM)
+            const monthFromDate = depositData.date.slice(0, 7);
             await fetch('/api/deposits', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ...depositData, month }),
+                body: JSON.stringify({ ...depositData, month: monthFromDate }),
             });
 
             setIsModalOpen(false);
@@ -90,18 +130,14 @@ export default function DepositHistoryPage() {
             <div className="flex items-center justify-between">
                 <h1 className="text-3xl font-bold text-primary">Deposit History</h1>
                 <div className="flex items-center gap-3">
-                    <input
-                        type="month"
-                        value={month}
-                        onChange={(e) => setMonth(e.target.value)}
-                        className="rounded-md border border-input bg-background px-3 py-2 text-foreground focus:border-primary focus:ring-1 focus:ring-primary"
-                    />
-                    <button
-                        onClick={openAddModal}
-                        className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                    >
-                        <Plus className="h-4 w-4" /> Add New
-                    </button>
+                    {month && canManageThisMonth(month) && (
+                        <button
+                            onClick={openAddModal}
+                            className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                        >
+                            <Plus className="h-4 w-4" /> Add New
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -128,22 +164,24 @@ export default function DepositHistoryPage() {
                                         <td className="px-6 py-4 font-medium">{typeof deposit.memberId === 'object' && deposit.memberId !== null ? (deposit.memberId as any).name : 'N/A'}</td>
                                         <td className="px-6 py-4 text-right font-medium">৳{deposit.amount.toFixed(0)}</td>
                                         <td className="px-6 py-4">
-                                            <div className="flex items-center justify-center gap-2">
-                                                <button
-                                                    onClick={() => handleEdit(deposit)}
-                                                    className="rounded p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
-                                                    title="Edit"
-                                                >
-                                                    <Edit2 className="h-4 w-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => setDeleteConfirm({ isOpen: true, id: deposit._id })}
-                                                    className="rounded p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
-                                            </div>
+                                            {canManageThisMonth(month) && (
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <button
+                                                        onClick={() => handleEdit(deposit)}
+                                                        className="rounded p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+                                                        title="Edit"
+                                                    >
+                                                        <Edit2 className="h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setDeleteConfirm({ isOpen: true, id: deposit._id })}
+                                                        className="rounded p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            )}
                                         </td>
                                     </tr>
                                 ))
@@ -160,6 +198,7 @@ export default function DepositHistoryPage() {
                     setEditingDeposit(null);
                 }}
                 members={members}
+                assignedMonth={user?.assignedMonth}
                 onSave={handleSave}
                 editData={editingDeposit}
             />
