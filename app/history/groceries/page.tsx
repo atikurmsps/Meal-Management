@@ -126,14 +126,14 @@ export default function GroceryHistoryPage() {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold text-primary">Grocery History</h1>
-                <div className="flex items-center gap-3">
+        <div className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary">Grocery History</h1>
+                <div className="flex items-center gap-3 w-full sm:w-auto">
                     {month && canManageThisMonth(month) && (
                         <button
                             onClick={openAddModal}
-                            className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                            className="flex items-center gap-2 rounded-md bg-primary px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-primary-foreground hover:bg-primary/90 w-full sm:w-auto justify-center"
                         >
                             <Plus className="h-4 w-4" /> Add New
                         </button>
@@ -142,16 +142,63 @@ export default function GroceryHistoryPage() {
             </div>
 
             <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
+                {/* Mobile Card View */}
+                <div className="block sm:hidden divide-y divide-border">
+                    {loading ? (
+                        <div className="p-4 text-center">Loading...</div>
+                    ) : groceries.length === 0 ? (
+                        <div className="p-4 text-center text-muted-foreground">No groceries found for this month.</div>
+                    ) : (
+                        groceries.map((grocery) => (
+                            <div key={grocery._id} className="p-4 space-y-2">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                        <p className="font-medium text-foreground">{grocery.description}</p>
+                                        <p className="text-sm text-muted-foreground mt-1">
+                                            {new Date(grocery.date).toLocaleDateString()} • {typeof grocery.doneBy === 'object' && grocery.doneBy !== null ? (grocery.doneBy as any).name : '-'}
+                                        </p>
+                                        {grocery.note && (
+                                            <p className="text-sm text-muted-foreground mt-1">{grocery.note}</p>
+                                        )}
+                                    </div>
+                                    <div className="text-right ml-4">
+                                        <p className="font-medium text-foreground">৳{grocery.amount.toFixed(0)}</p>
+                                        {canManageThisMonth(month) && (
+                                            <div className="flex items-center justify-end gap-2 mt-2">
+                                                <button
+                                                    onClick={() => handleEdit(grocery)}
+                                                    className="rounded p-1 text-blue-600 hover:bg-blue-50"
+                                                    title="Edit"
+                                                >
+                                                    <Edit2 className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => setDeleteConfirm({ isOpen: true, id: grocery._id })}
+                                                    className="rounded p-1 text-red-600 hover:bg-red-50"
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden sm:block overflow-x-auto">
                     <table className="w-full text-left text-sm">
                         <thead className="bg-muted/50 text-muted-foreground">
                             <tr>
-                                <th className="px-6 py-3 font-medium">Date</th>
-                                <th className="px-6 py-3 font-medium">Description</th>
-                                <th className="px-6 py-3 font-medium">Done By</th>
-                                <th className="px-6 py-3 font-medium">Note</th>
-                                <th className="px-6 py-3 font-medium text-right">Amount</th>
-                                <th className="px-6 py-3 font-medium text-center">Actions</th>
+                                <th className="px-4 lg:px-6 py-3 font-medium">Date</th>
+                                <th className="px-4 lg:px-6 py-3 font-medium">Description</th>
+                                <th className="px-4 lg:px-6 py-3 font-medium">Done By</th>
+                                <th className="px-4 lg:px-6 py-3 font-medium">Note</th>
+                                <th className="px-4 lg:px-6 py-3 font-medium text-right">Amount</th>
+                                <th className="px-4 lg:px-6 py-3 font-medium text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
@@ -162,12 +209,12 @@ export default function GroceryHistoryPage() {
                             ) : (
                                 groceries.map((grocery) => (
                                     <tr key={grocery._id} className="hover:bg-muted/10">
-                                        <td className="px-6 py-4">{new Date(grocery.date).toLocaleDateString()}</td>
-                                        <td className="px-6 py-4 font-medium">{grocery.description}</td>
-                                        <td className="px-6 py-4">{typeof grocery.doneBy === 'object' && grocery.doneBy !== null ? (grocery.doneBy as any).name : '-'}</td>
-                                        <td className="px-6 py-4 text-muted-foreground">{grocery.note}</td>
-                                        <td className="px-6 py-4 text-right font-medium">৳{grocery.amount.toFixed(0)}</td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-4 lg:px-6 py-4">{new Date(grocery.date).toLocaleDateString()}</td>
+                                        <td className="px-4 lg:px-6 py-4 font-medium">{grocery.description}</td>
+                                        <td className="px-4 lg:px-6 py-4">{typeof grocery.doneBy === 'object' && grocery.doneBy !== null ? (grocery.doneBy as any).name : '-'}</td>
+                                        <td className="px-4 lg:px-6 py-4 text-muted-foreground">{grocery.note}</td>
+                                        <td className="px-4 lg:px-6 py-4 text-right font-medium">৳{grocery.amount.toFixed(0)}</td>
+                                        <td className="px-4 lg:px-6 py-4">
                                             {canManageThisMonth(month) && (
                                                 <div className="flex items-center justify-center gap-2">
                                                     <button

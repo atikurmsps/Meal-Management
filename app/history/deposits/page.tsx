@@ -127,13 +127,13 @@ export default function DepositHistoryPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold text-primary">Deposit History</h1>
-                <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary">Deposit History</h1>
+                <div className="flex items-center gap-3 w-full sm:w-auto">
                     {month && canManageThisMonth(month) && (
                         <button
                             onClick={openAddModal}
-                            className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                            className="flex items-center gap-2 rounded-md bg-primary px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-primary-foreground hover:bg-primary/90 w-full sm:w-auto justify-center"
                         >
                             <Plus className="h-4 w-4" /> Add New
                         </button>
@@ -142,14 +142,56 @@ export default function DepositHistoryPage() {
             </div>
 
             <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
+                {/* Mobile Card View */}
+                <div className="block sm:hidden divide-y divide-border">
+                    {loading ? (
+                        <div className="p-4 text-center">Loading...</div>
+                    ) : deposits.length === 0 ? (
+                        <div className="p-4 text-center text-muted-foreground">No deposits found for this month.</div>
+                    ) : (
+                        deposits.map((deposit) => (
+                            <div key={deposit._id} className="p-4 space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="font-medium text-foreground">{typeof deposit.memberId === 'object' && deposit.memberId !== null ? (deposit.memberId as any).name : 'N/A'}</p>
+                                        <p className="text-sm text-muted-foreground">{new Date(deposit.date).toLocaleDateString()}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="font-medium text-foreground">৳{deposit.amount.toFixed(0)}</p>
+                                        {canManageThisMonth(month) && (
+                                            <div className="flex items-center justify-end gap-2 mt-2">
+                                                <button
+                                                    onClick={() => handleEdit(deposit)}
+                                                    className="rounded p-1 text-blue-600 hover:bg-blue-50"
+                                                    title="Edit"
+                                                >
+                                                    <Edit2 className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => setDeleteConfirm({ isOpen: true, id: deposit._id })}
+                                                    className="rounded p-1 text-red-600 hover:bg-red-50"
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden sm:block overflow-x-auto">
                     <table className="w-full text-left text-sm">
                         <thead className="bg-muted/50 text-muted-foreground">
                             <tr>
-                                <th className="px-6 py-3 font-medium">Date</th>
-                                <th className="px-6 py-3 font-medium">Member</th>
-                                <th className="px-6 py-3 font-medium text-right">Amount</th>
-                                <th className="px-6 py-3 font-medium text-center">Actions</th>
+                                <th className="px-4 lg:px-6 py-3 font-medium">Date</th>
+                                <th className="px-4 lg:px-6 py-3 font-medium">Member</th>
+                                <th className="px-4 lg:px-6 py-3 font-medium text-right">Amount</th>
+                                <th className="px-4 lg:px-6 py-3 font-medium text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
@@ -160,10 +202,10 @@ export default function DepositHistoryPage() {
                             ) : (
                                 deposits.map((deposit) => (
                                     <tr key={deposit._id} className="hover:bg-muted/10">
-                                        <td className="px-6 py-4">{new Date(deposit.date).toLocaleDateString()}</td>
-                                        <td className="px-6 py-4 font-medium">{typeof deposit.memberId === 'object' && deposit.memberId !== null ? (deposit.memberId as any).name : 'N/A'}</td>
-                                        <td className="px-6 py-4 text-right font-medium">৳{deposit.amount.toFixed(0)}</td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-4 lg:px-6 py-4">{new Date(deposit.date).toLocaleDateString()}</td>
+                                        <td className="px-4 lg:px-6 py-4 font-medium">{typeof deposit.memberId === 'object' && deposit.memberId !== null ? (deposit.memberId as any).name : 'N/A'}</td>
+                                        <td className="px-4 lg:px-6 py-4 text-right font-medium">৳{deposit.amount.toFixed(0)}</td>
+                                        <td className="px-4 lg:px-6 py-4">
                                             {canManageThisMonth(month) && (
                                                 <div className="flex items-center justify-center gap-2">
                                                     <button

@@ -18,7 +18,7 @@ const navItems = [
     { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
-function SidebarComponent() {
+function SidebarComponent({ onClose }: { onClose?: () => void }) {
     const pathname = usePathname();
     const router = useRouter();
     const { user, permissions } = useAuth();
@@ -98,14 +98,14 @@ function SidebarComponent() {
     };
 
     return (
-        <div className="flex h-full w-72 flex-col bg-white border-r border-border shadow-sm">
+        <div className="flex h-full w-full lg:w-72 flex-col bg-white border-r border-border shadow-sm">
             {/* Header */}
             <div className="flex h-20 items-center justify-center border-b border-border bg-gradient-to-r from-primary/5 to-accent/5">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                    <div className="hidden lg:flex w-8 h-8 bg-primary rounded-lg items-center justify-center">
                         <span className="text-primary-foreground font-bold text-lg">M</span>
                     </div>
-                    <h1 className="text-xl font-semibold text-foreground">Meal Manager</h1>
+                    <h1 className="hidden lg:block text-xl font-semibold text-foreground">Meal Manager</h1>
                 </div>
             </div>
 
@@ -129,6 +129,12 @@ function SidebarComponent() {
                         <Link
                             key={item.href}
                             href={item.href}
+                            onClick={() => {
+                                // Close sidebar on mobile when navigating
+                                if (window.innerWidth < 1024 && onClose) {
+                                    onClose();
+                                }
+                            }}
                             className={clsx(
                                 'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 group',
                                 isActive

@@ -118,14 +118,14 @@ export default function MealHistoryPage() {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-bold text-primary">Meal History</h1>
-                <div className="flex items-center gap-3">
+        <div className="space-y-4 sm:space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary">Meal History</h1>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
                     <select
                         value={selectedMember}
                         onChange={(e) => setSelectedMember(e.target.value)}
-                        className="rounded-md border border-input bg-background px-3 py-2 text-foreground focus:border-primary focus:ring-1 focus:ring-primary"
+                        className="rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary w-full sm:w-auto"
                     >
                         <option value="">All Members</option>
                         {members.map((member) => (
@@ -137,7 +137,7 @@ export default function MealHistoryPage() {
                     {month && canManageThisMonth(month) && (
                         <button
                             onClick={() => setIsModalOpen(true)}
-                            className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                            className="flex items-center justify-center gap-2 rounded-md bg-primary px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-primary-foreground hover:bg-primary/90 w-full sm:w-auto"
                         >
                             <Plus className="h-4 w-4" /> Add New
                         </button>
@@ -146,14 +146,47 @@ export default function MealHistoryPage() {
             </div>
 
             <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
-                <div className="overflow-x-auto">
+                {/* Mobile Card View */}
+                <div className="block sm:hidden divide-y divide-border">
+                    {loading ? (
+                        <div className="p-4 text-center">Loading...</div>
+                    ) : meals.length === 0 ? (
+                        <div className="p-4 text-center text-muted-foreground">No meals found for this month.</div>
+                    ) : (
+                        meals.map((meal) => (
+                            <div key={meal._id} className="p-4 space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="font-medium text-foreground">{typeof meal.memberId === 'object' && meal.memberId !== null ? (meal.memberId as any).name : 'Unknown'}</p>
+                                        <p className="text-sm text-muted-foreground">{new Date(meal.date).toLocaleDateString()}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="font-medium text-foreground">Count: {meal.count}</p>
+                                        {canManageThisMonth(month) && (
+                                            <button
+                                                onClick={() => setDeleteConfirm({ isOpen: true, id: meal._id })}
+                                                className="mt-2 rounded p-1 text-red-600 hover:bg-red-50"
+                                                title="Delete"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    )}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden sm:block overflow-x-auto">
                     <table className="w-full text-left text-sm">
                         <thead className="bg-muted/50 text-muted-foreground">
                             <tr>
-                                <th className="px-6 py-3 font-medium">Date</th>
-                                <th className="px-6 py-3 font-medium">Member</th>
-                                <th className="px-6 py-3 font-medium text-right">Count</th>
-                                <th className="px-6 py-3 font-medium text-center">Actions</th>
+                                <th className="px-4 lg:px-6 py-3 font-medium">Date</th>
+                                <th className="px-4 lg:px-6 py-3 font-medium">Member</th>
+                                <th className="px-4 lg:px-6 py-3 font-medium text-right">Count</th>
+                                <th className="px-4 lg:px-6 py-3 font-medium text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
@@ -164,10 +197,10 @@ export default function MealHistoryPage() {
                             ) : (
                                 meals.map((meal) => (
                                     <tr key={meal._id} className="hover:bg-muted/10">
-                                        <td className="px-6 py-4">{new Date(meal.date).toLocaleDateString()}</td>
-                                        <td className="px-6 py-4 font-medium">{typeof meal.memberId === 'object' && meal.memberId !== null ? (meal.memberId as any).name : 'Unknown'}</td>
-                                        <td className="px-6 py-4 text-right font-medium">{meal.count}</td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-4 lg:px-6 py-4">{new Date(meal.date).toLocaleDateString()}</td>
+                                        <td className="px-4 lg:px-6 py-4 font-medium">{typeof meal.memberId === 'object' && meal.memberId !== null ? (meal.memberId as any).name : 'Unknown'}</td>
+                                        <td className="px-4 lg:px-6 py-4 text-right font-medium">{meal.count}</td>
+                                        <td className="px-4 lg:px-6 py-4">
                                             {canManageThisMonth(month) && (
                                                 <div className="flex items-center justify-center gap-2">
                                                     <button

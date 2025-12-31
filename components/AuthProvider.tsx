@@ -2,7 +2,6 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import Sidebar from '@/components/Sidebar';
 import type { AuthUser, UserPermissions } from '@/types';
 
 interface AuthContextType {
@@ -12,7 +11,7 @@ interface AuthContextType {
   refreshAuth: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -158,18 +157,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return <>{children}</>;
   }
 
-  // Show main app with sidebar for authenticated users
+  // Show main app - Layout component handles sidebar
   if (user) {
     return (
       <AuthContext.Provider value={{ user, permissions, isLoading, refreshAuth }}>
-        <div className="flex h-screen overflow-hidden">
-          <Sidebar />
-          <main className="flex-1 overflow-y-auto">
-            <div className="container mx-auto px-6 py-8 max-w-7xl">
-              {children}
-            </div>
-          </main>
-        </div>
+        {children}
       </AuthContext.Provider>
     );
   }

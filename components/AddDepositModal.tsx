@@ -67,8 +67,8 @@ export default function AddDepositModal({ isOpen, onClose, members, assignedMont
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="w-full max-w-md rounded-lg bg-background p-6 shadow-lg border border-border">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+            <div className="w-full max-w-md rounded-lg bg-background p-4 sm:p-6 shadow-lg border border-border max-h-[90vh] overflow-y-auto">
                 <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-xl font-bold text-primary">{editData ? 'Edit Deposit' : 'Add Deposit'}</h2>
                     <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
