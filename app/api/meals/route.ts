@@ -21,7 +21,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
         if (memberId) {
             query.memberId = memberId;
         }
-        const meals = await Meal.find(query).populate('memberId', 'name').select('-__v').sort({ date: -1 }).lean();
+        const meals = await Meal.find(query).populate('memberId', 'name').select('date memberId count month').sort({ date: -1 }).lean();
         return NextResponse.json({ success: true, data: meals as any });
     } catch (error) {
         return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'An error occurred' }, { status: 400 });
@@ -87,9 +87,9 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiRespons
         const body = await request.json();
         const { id, month, ...updateData } = body;
         
-        // Get the meal to check its month
-        const existingMeal = await Meal.findById(id);
-        if (!existingMeal) {
+        // Get the meal to check its month - only select month field for efficiency
+        const existingMeal = await Meal.findById(id).select('month').lean() as { month?: string } | null;
+        if (!existingMeal || !existingMeal.month) {
             return NextResponse.json({ success: false, error: 'Meal not found' }, { status: 404 });
         }
         
@@ -128,9 +128,9 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<ApiResp
             return NextResponse.json({ success: false, error: 'ID is required' }, { status: 400 });
         }
 
-        // Get the meal to check its month
-        const meal = await Meal.findById(id);
-        if (!meal) {
+        // Get the meal to check its month - only select month field for efficiency
+        const meal = await Meal.findById(id).select('month').lean() as { month?: string } | null;
+        if (!meal || !meal.month) {
             return NextResponse.json({ success: false, error: 'Meal not found' }, { status: 404 });
         }
         
@@ -140,10 +140,6 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<ApiResp
         }
 
         await Meal.findByIdAndDelete(id);
-
-        if (!meal) {
-            return NextResponse.json({ success: false, error: 'Meal not found' }, { status: 404 });
-        }
 
         return NextResponse.json({ success: true });
     } catch (error) {

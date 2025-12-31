@@ -97,8 +97,12 @@ export interface ChangePasswordRequest {
 
 export interface UpdateUserRoleRequest {
   userId: string;
-  role: UserRole;
+  role?: UserRole;
   assignedMonth?: string;
+  password?: string;
+  isActive?: boolean;
+  phoneNumber?: string;
+  name?: string;
 }
 
 // Permission Types

@@ -149,64 +149,14 @@ export default function ExpenseHistoryPage() {
                         Member Expense Status - Total Expense: ৳{expenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(0)}
                     </h2>
                 </div>
-                {/* Mobile Card View */}
-                <div className="block sm:hidden divide-y divide-border">
-                    {members.map((member) => {
-                        const paid = expenses
-                            .filter(exp => {
-                                if (!exp.paidBy) return false;
-                                const paidById = typeof exp.paidBy === 'object' && exp.paidBy !== null 
-                                    ? (exp.paidBy as any)._id 
-                                    : exp.paidBy;
-                                return paidById === member._id;
-                            })
-                            .reduce((sum, exp) => sum + exp.amount, 0);
-
-                        const share = expenses
-                            .filter(exp => {
-                                if (!exp.splitAmong || exp.splitAmong.length === 0) return false;
-                                return exp.splitAmong.some((m: any) => {
-                                    if (!m) return false;
-                                    const memberId = typeof m === 'object' && m !== null ? m._id : m;
-                                    return memberId === member._id;
-                                });
-                            })
-                            .reduce((sum, exp) => sum + (exp.amount / exp.splitAmong.length), 0);
-
-                        const balance = paid - share;
-
-                        return (
-                            <div key={member._id} className="p-4">
-                                <p className="font-medium text-foreground mb-2">{member.name}</p>
-                                <div className="grid grid-cols-3 gap-2 text-sm">
-                                    <div>
-                                        <p className="text-muted-foreground">Paid</p>
-                                        <p className="font-medium">৳{paid.toFixed(0)}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-muted-foreground">Share</p>
-                                        <p className="font-medium">৳{share.toFixed(0)}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-muted-foreground">Balance</p>
-                                        <p className={`font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                            {balance >= 0 ? '+' : ''}৳{balance.toFixed(0)}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-                {/* Desktop Table View */}
-                <div className="hidden sm:block overflow-x-auto">
-                    <table className="w-full text-left text-sm">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
                         <thead className="bg-muted/50 text-muted-foreground">
                             <tr>
-                                <th className="px-4 lg:px-6 py-3 font-medium">Member</th>
-                                <th className="px-4 lg:px-6 py-3 font-medium text-right">Paid</th>
-                                <th className="px-4 lg:px-6 py-3 font-medium text-right">Share</th>
-                                <th className="px-4 lg:px-6 py-3 font-medium text-right">Balance</th>
+                                <th className="px-3 sm:px-4 lg:px-6 py-3 font-medium text-sm sm:text-base">Member</th>
+                                <th className="px-3 sm:px-4 lg:px-6 py-3 font-medium text-right text-sm sm:text-base">Paid</th>
+                                <th className="px-3 sm:px-4 lg:px-6 py-3 font-medium text-right text-sm sm:text-base">Share</th>
+                                <th className="px-3 sm:px-4 lg:px-6 py-3 font-medium text-right text-sm sm:text-base">Balance</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
@@ -236,10 +186,10 @@ export default function ExpenseHistoryPage() {
 
                                 return (
                                     <tr key={member._id} className="hover:bg-muted/10">
-                                        <td className="px-4 lg:px-6 py-4 font-medium">{member.name}</td>
-                                        <td className="px-4 lg:px-6 py-4 text-right">৳{paid.toFixed(0)}</td>
-                                        <td className="px-4 lg:px-6 py-4 text-right">৳{share.toFixed(0)}</td>
-                                        <td className={`px-4 lg:px-6 py-4 text-right font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                        <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 font-medium text-sm sm:text-base">{member.name}</td>
+                                        <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-right text-sm sm:text-base">৳{paid.toFixed(0)}</td>
+                                        <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-right text-sm sm:text-base">৳{share.toFixed(0)}</td>
+                                        <td className={`px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-right font-bold text-sm sm:text-base ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                             {balance >= 0 ? '+' : ''}৳{balance.toFixed(0)}
                                         </td>
                                     </tr>

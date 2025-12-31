@@ -20,7 +20,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
         const expenses = await Expense.find(query)
             .populate('paidBy', 'name')
             .populate('splitAmong', 'name')
-            .select('-__v')
+            .select('date description amount note paidBy splitAmong')
             .sort({ date: -1 })
             .lean();
         return NextResponse.json({ success: true, data: expenses as any });
@@ -74,9 +74,9 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiRespons
             return NextResponse.json({ success: false, error: 'ID is required' }, { status: 400 });
         }
 
-        // Get existing expense to check its month
-        const existingExpense = await Expense.findById(id);
-        if (!existingExpense) {
+        // Get existing expense to check its month - only select month field for efficiency
+        const existingExpense = await Expense.findById(id).select('month').lean() as { month?: string } | null;
+        if (!existingExpense || !existingExpense.month) {
             return NextResponse.json({ success: false, error: 'Expense not found' }, { status: 404 });
         }
 
@@ -118,9 +118,9 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<ApiResp
             return NextResponse.json({ success: false, error: 'ID is required' }, { status: 400 });
         }
 
-        // Get the expense to check its month
-        const expense = await Expense.findById(id);
-        if (!expense) {
+        // Get the expense to check its month - only select month field for efficiency
+        const expense = await Expense.findById(id).select('month').lean() as { month?: string } | null;
+        if (!expense || !expense.month) {
             return NextResponse.json({ success: false, error: 'Expense not found' }, { status: 404 });
         }
         
@@ -130,10 +130,6 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<ApiResp
         }
 
         await Expense.findByIdAndDelete(id);
-
-        if (!expense) {
-            return NextResponse.json({ success: false, error: 'Expense not found' }, { status: 404 });
-        }
 
         return NextResponse.json({ success: true });
     } catch (error) {

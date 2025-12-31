@@ -316,31 +316,17 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiRespons
     }
 
     const body: UpdateUserRoleRequest = await request.json();
-    const { userId, role, assignedMonth } = body;
+    const { userId, role, assignedMonth, password, isActive, phoneNumber, name } = body;
 
-    if (!userId || !role) {
+    if (!userId) {
       return NextResponse.json(
-        { success: false, error: 'User ID and role are required' },
+        { success: false, error: 'User ID is required' },
         { status: 400 }
       );
     }
 
-    if (!['general', 'manager', 'super'].includes(role)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid role' },
-        { status: 400 }
-      );
-    }
-
-    // Managers must have an assigned month
-    if (role === 'manager' && !assignedMonth) {
-      return NextResponse.json(
-        { success: false, error: 'Managers must have an assigned month' },
-        { status: 400 }
-      );
-    }
-
-    const user = await User.findById(userId);
+    // Get user - only select needed fields for efficiency
+    const user = await User.findById(userId).select('_id phoneNumber name role assignedMonth isActive');
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
@@ -348,22 +334,76 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiRespons
       );
     }
 
-    // Prevent changing the last super user's role
-    if (user.role === 'super' && role !== 'super') {
-      const superUsersCount = await User.countDocuments({ role: 'super', isActive: true });
-      if (superUsersCount <= 1) {
+    // Update role if provided
+    if (role !== undefined) {
+      if (!['general', 'manager', 'super'].includes(role)) {
         return NextResponse.json(
-          { success: false, error: 'Cannot remove the last super user' },
+          { success: false, error: 'Invalid role' },
           { status: 400 }
         );
       }
+
+      // Managers must have an assigned month
+      if (role === 'manager' && !assignedMonth) {
+        return NextResponse.json(
+          { success: false, error: 'Managers must have an assigned month' },
+          { status: 400 }
+        );
+      }
+
+      // Prevent changing the last super user's role
+      if (user.role === 'super' && role !== 'super') {
+        const superUsersCount = await User.countDocuments({ role: 'super', isActive: true });
+        if (superUsersCount <= 1) {
+          return NextResponse.json(
+            { success: false, error: 'Cannot remove the last super user' },
+            { status: 400 }
+          );
+        }
+      }
+
+      user.role = role;
+      if (role === 'manager') {
+        user.assignedMonth = assignedMonth;
+      } else {
+        user.assignedMonth = undefined;
+      }
     }
 
-    user.role = role;
-    if (role === 'manager') {
+    // Update assigned month if role is manager and assignedMonth is provided
+    if (user.role === 'manager' && assignedMonth !== undefined) {
       user.assignedMonth = assignedMonth;
-    } else {
-      user.assignedMonth = undefined;
+    }
+
+    // Update password if provided
+    if (password !== undefined && password.trim() !== '') {
+      if (password.length < 6) {
+        return NextResponse.json(
+          { success: false, error: 'Password must be at least 6 characters' },
+          { status: 400 }
+        );
+      }
+      user.password = await hashPassword(password);
+    }
+
+    // Update name if provided
+    if (name !== undefined && name.trim() !== '') {
+      user.name = name.trim();
+    }
+
+    // Update isActive if provided
+    if (isActive !== undefined) {
+      // Prevent deactivating the last super user
+      if (user.role === 'super' && !isActive) {
+        const superUsersCount = await User.countDocuments({ role: 'super', isActive: true });
+        if (superUsersCount <= 1) {
+          return NextResponse.json(
+            { success: false, error: 'Cannot deactivate the last super user' },
+            { status: 400 }
+          );
+        }
+      }
+      user.isActive = isActive;
     }
 
     await user.save();

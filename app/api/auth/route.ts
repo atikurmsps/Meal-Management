@@ -55,7 +55,7 @@ async function handleLogin(data: LoginRequest): Promise<NextResponse<ApiResponse
       );
     }
 
-    const user = await User.findOne({ phoneNumber, isActive: true });
+    const user = await User.findOne({ phoneNumber, isActive: true }).select('_id phoneNumber name role assignedMonth password');
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'Invalid credentials' },
@@ -114,8 +114,8 @@ async function handleSignup(data: SignupRequest): Promise<NextResponse<ApiRespon
     const existingUsers = await User.countDocuments();
     const isFirstUser = existingUsers === 0;
 
-    // Check if phone number already exists (using trimmed value)
-    const existingUser = await User.findOne({ phoneNumber });
+    // Check if phone number already exists (using trimmed value) - only select _id for efficiency
+    const existingUser = await User.findOne({ phoneNumber }).select('_id').lean();
     if (existingUser) {
       return NextResponse.json(
         { success: false, error: 'Phone number already exists' },

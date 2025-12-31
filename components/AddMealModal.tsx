@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { formatMonth } from '@/lib/dateUtils';
 import type { AddMealModalProps, Member } from '@/types';
 
 export default function AddMealModal({ isOpen, onClose, members, assignedMonth, onSave }: AddMealModalProps) {
@@ -78,7 +79,7 @@ export default function AddMealModal({ isOpen, onClose, members, assignedMonth, 
                                 if (assignedMonth) {
                                     const selectedMonth = selectedDate.slice(0, 7);
                                     if (selectedMonth !== assignedMonth) {
-                                        alert(`You can only add data for ${assignedMonth}. Please select a date within this month.`);
+                                        alert(`You can only add data for ${formatMonth(assignedMonth)}. Please select a date within this month.`);
                                         return;
                                     }
                                 }
@@ -91,7 +92,7 @@ export default function AddMealModal({ isOpen, onClose, members, assignedMonth, 
                         />
                         {assignedMonth && (
                             <p className="mt-1 text-xs text-muted-foreground">
-                                You can only add data for {assignedMonth}
+                                You can only add data for {formatMonth(assignedMonth)}
                             </p>
                         )}
                     </div>

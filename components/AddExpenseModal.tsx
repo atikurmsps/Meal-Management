@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { formatMonth } from '@/lib/dateUtils';
 import type { AddExpenseModalProps, Expense } from '@/types';
 
 interface ExtendedAddExpenseModalProps extends AddExpenseModalProps {
@@ -179,7 +180,7 @@ export default function AddExpenseModal({ isOpen, onClose, onSave, members, assi
                                 if (assignedMonth) {
                                     const selectedMonth = selectedDate.slice(0, 7);
                                     if (selectedMonth !== assignedMonth) {
-                                        alert(`You can only add data for ${assignedMonth}. Please select a date within this month.`);
+                                        alert(`You can only add data for ${formatMonth(assignedMonth)}. Please select a date within this month.`);
                                         return;
                                     }
                                 }
@@ -192,7 +193,7 @@ export default function AddExpenseModal({ isOpen, onClose, onSave, members, assi
                         />
                         {assignedMonth && (
                             <p className="mt-1 text-xs text-muted-foreground">
-                                You can only add data for {assignedMonth}
+                                You can only add data for {formatMonth(assignedMonth)}
                             </p>
                         )}
                     </div>

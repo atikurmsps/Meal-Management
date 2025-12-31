@@ -20,7 +20,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
         const groceries = await Grocery.find(query)
             .populate('doneBy', 'name')
             .populate('addedBy', 'name')
-            .select('-__v')
+            .select('date description amount note doneBy addedBy month')
             .sort({ date: -1 })
             .lean();
         return NextResponse.json({ success: true, data: groceries as any });
@@ -74,9 +74,9 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiRespons
             return NextResponse.json({ success: false, error: 'ID is required' }, { status: 400 });
         }
 
-        // Get existing grocery to check its month
-        const existingGrocery = await Grocery.findById(id);
-        if (!existingGrocery) {
+        // Get existing grocery to check its month - only select month field for efficiency
+        const existingGrocery = await Grocery.findById(id).select('month').lean() as { month?: string } | null;
+        if (!existingGrocery || !existingGrocery.month) {
             return NextResponse.json({ success: false, error: 'Grocery not found' }, { status: 404 });
         }
 
@@ -118,9 +118,9 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<ApiResp
             return NextResponse.json({ success: false, error: 'ID is required' }, { status: 400 });
         }
 
-        // Get the grocery to check its month
-        const grocery = await Grocery.findById(id);
-        if (!grocery) {
+        // Get the grocery to check its month - only select month field for efficiency
+        const grocery = await Grocery.findById(id).select('month').lean() as { month?: string } | null;
+        if (!grocery || !grocery.month) {
             return NextResponse.json({ success: false, error: 'Grocery not found' }, { status: 404 });
         }
         
@@ -130,10 +130,6 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<ApiResp
         }
 
         await Grocery.findByIdAndDelete(id);
-
-        if (!grocery) {
-            return NextResponse.json({ success: false, error: 'Grocery not found' }, { status: 404 });
-        }
 
         return NextResponse.json({ success: true });
     } catch (error) {

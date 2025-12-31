@@ -16,7 +16,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
 
     try {
         if (!month) {
-            const settings = await Settings.findOne();
+            const settings = await Settings.findOne().select('currentMonth').lean() as { currentMonth?: string } | null;
             month = settings?.currentMonth || new Date().toISOString().slice(0, 7);
         }
 
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
                 { $match: { month } },
                 { $group: { _id: '$memberId', total: { $sum: '$amount' } } }
             ]),
-            Expense.find({ month }).select('amount paidBy splitAmong').lean()
+            Expense.find({ month }).select('amount paidBy splitAmong').lean() // Only select needed fields for calculations
         ]);
 
         // Create maps for O(1) lookup

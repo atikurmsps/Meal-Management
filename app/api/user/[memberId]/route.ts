@@ -34,11 +34,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }
 
         // Get all data for calculations using aggregation and lean for better performance
-        const [meals, groceries, deposits, expenses, mealTotals, groceryTotals] = await Promise.all([
+        const [meals, groceries, deposits, expenses, mealTotals, groceryTotals, depositTotal, groceryTotal, mealTotal] = await Promise.all([
             Meal.find({ memberId, month }).select('date count').sort({ date: -1 }).lean(),
             Grocery.find({ doneBy: memberId, month }).select('date amount description note').sort({ date: -1 }).lean(),
             Deposit.find({ memberId, month }).select('date amount').sort({ date: -1 }).lean(),
-            Expense.find({ month }).populate('paidBy', 'name').populate('splitAmong', 'name').select('-__v').lean(),
+            Expense.find({ month }).populate('paidBy', 'name').populate('splitAmong', 'name').select('date description amount note paidBy splitAmong').lean(),
             Meal.aggregate([
                 { $match: { month } },
                 { $group: { _id: null, total: { $sum: '$count' } } }
@@ -46,13 +46,25 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             Grocery.aggregate([
                 { $match: { month } },
                 { $group: { _id: null, total: { $sum: '$amount' } } }
+            ]),
+            Deposit.aggregate([
+                { $match: { memberId, month } },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ]),
+            Grocery.aggregate([
+                { $match: { doneBy: memberId, month } },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ]),
+            Meal.aggregate([
+                { $match: { memberId, month } },
+                { $group: { _id: null, total: { $sum: '$count' } } }
             ])
         ]);
 
-        // Calculate totals
-        const totalDeposit = deposits.reduce((sum: number, dep: any) => sum + dep.amount, 0);
-        const totalGrocery = groceries.reduce((sum: number, groc: any) => sum + groc.amount, 0);
-        const totalMeals = meals.reduce((sum: number, meal: any) => sum + meal.count, 0);
+        // Calculate totals using aggregation results (faster than reduce)
+        const totalDeposit = depositTotal[0]?.total || 0;
+        const totalGrocery = groceryTotal[0]?.total || 0;
+        const totalMeals = mealTotal[0]?.total || 0;
 
         // Calculate meal rate using aggregation results
         const allMealsCount = mealTotals[0]?.total || 0;

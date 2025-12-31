@@ -17,8 +17,15 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       return null;
     }
 
-    // Verify user still exists and is active
-    const user = await User.findById(decoded._id).select('-password');
+    // Verify user still exists and is active - only select needed fields
+    const user = await User.findById(decoded._id).select('_id phoneNumber name role assignedMonth isActive').lean() as {
+      _id: any;
+      phoneNumber: string;
+      name: string;
+      role: string;
+      assignedMonth?: string;
+      isActive: boolean;
+    } | null;
     if (!user || !user.isActive) {
       return null;
     }
@@ -27,7 +34,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       _id: user._id.toString(),
       phoneNumber: user.phoneNumber,
       name: user.name,
-      role: user.role,
+      role: user.role as 'general' | 'manager' | 'super',
       assignedMonth: user.assignedMonth,
     };
   } catch (error) {
