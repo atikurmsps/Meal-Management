@@ -27,7 +27,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }
 
         // Get user/member info (users are members) - only select needed fields
-        const member = await User.findById(memberId).select('_id name').lean();
+        const member = await User.findById(memberId).select('_id name').lean() as any;
 
         if (!member) {
             return NextResponse.json({ success: false, error: 'User/Member not found' }, { status: 404 });
@@ -109,13 +109,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                     expenseBalance
                 },
                 history: {
-                    deposits,
-                    meals,
-                    groceries,
-                    expenses: memberExpenses
+                    deposits: deposits as any,
+                    meals: meals as any,
+                    groceries: groceries as any,
+                    expenses: memberExpenses as any
                 }
             }
-        });
+        } as any);
     } catch (error) {
         console.error('Error in member API:', error);
         return NextResponse.json({ 

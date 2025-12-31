@@ -27,16 +27,16 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
 
     const users = await User.find({}).select('-password -__v').sort({ createdAt: -1 }).lean();
 
-    const userData: UserType[] = users.map(user => ({
-      _id: user._id.toString(),
+    const userData: UserType[] = users.map((user: any) => ({
+      _id: user._id?.toString() || '',
       phoneNumber: user.phoneNumber,
       name: user.name,
       email: user.email,
       role: user.role,
       assignedMonth: user.assignedMonth,
       isActive: user.isActive,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
+      createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
+      updatedAt: user.updatedAt?.toISOString() || new Date().toISOString(),
     }));
 
     return NextResponse.json({

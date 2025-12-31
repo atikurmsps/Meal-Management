@@ -21,6 +21,7 @@ const UserSchema = new mongoose.Schema<IUser>({
     unique: true,
     sparse: true, // Allows multiple null values, but enforces uniqueness for non-null values
     trim: true,
+    index: true, // This creates the index, so we don't need to add it separately
   },
   password: {
     type: String,
@@ -58,7 +59,7 @@ const UserSchema = new mongoose.Schema<IUser>({
 
 // Indexes for faster queries
 UserSchema.index({ isActive: 1 }); // For filtering active users
-UserSchema.index({ phoneNumber: 1 }); // Already unique, but explicit index helps
+// phoneNumber index is already created by unique: true, so we don't need to add it again
 UserSchema.index({ role: 1 }); // For role-based queries
 UserSchema.index({ assignedMonth: 1 }); // For manager month queries
 

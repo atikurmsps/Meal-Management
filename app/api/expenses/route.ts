@@ -23,7 +23,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
             .select('-__v')
             .sort({ date: -1 })
             .lean();
-        return NextResponse.json({ success: true, data: expenses });
+        return NextResponse.json({ success: true, data: expenses as any });
     } catch (error) {
         return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'An error occurred' }, { status: 400 });
     }
