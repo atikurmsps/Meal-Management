@@ -7,7 +7,7 @@ const MealSchema = new mongoose.Schema({
     },
     memberId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Member',
+        ref: 'User',
         required: true,
     },
     count: {

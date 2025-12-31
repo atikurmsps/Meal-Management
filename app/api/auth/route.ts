@@ -43,7 +43,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 
 async function handleLogin(data: LoginRequest): Promise<NextResponse<ApiResponse<AuthUser>>> {
   try {
-    const { phoneNumber, password } = data;
+    let { phoneNumber, password } = data;
+
+    // Trim phone number to ensure consistency
+    phoneNumber = typeof phoneNumber === 'string' ? phoneNumber.trim() : phoneNumber;
 
     if (!phoneNumber || !password) {
       return NextResponse.json(
@@ -94,7 +97,11 @@ async function handleLogin(data: LoginRequest): Promise<NextResponse<ApiResponse
 
 async function handleSignup(data: SignupRequest): Promise<NextResponse<ApiResponse<AuthUser>>> {
   try {
-    const { phoneNumber, password, name } = data;
+    let { phoneNumber, password, name } = data;
+
+    // Trim all string fields
+    phoneNumber = typeof phoneNumber === 'string' ? phoneNumber.trim() : phoneNumber;
+    name = typeof name === 'string' ? name.trim() : name;
 
     if (!phoneNumber || !password || !name) {
       return NextResponse.json(
@@ -107,7 +114,7 @@ async function handleSignup(data: SignupRequest): Promise<NextResponse<ApiRespon
     const existingUsers = await User.countDocuments();
     const isFirstUser = existingUsers === 0;
 
-    // Check if phone number already exists
+    // Check if phone number already exists (using trimmed value)
     const existingUser = await User.findOne({ phoneNumber });
     if (existingUser) {
       return NextResponse.json(

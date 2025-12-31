@@ -1,5 +1,5 @@
 import dbConnect from '@/lib/db';
-import Member from '@/models/Member';
+import User from '@/models/User';
 import Meal from '@/models/Meal';
 import Grocery from '@/models/Grocery';
 import Expense from '@/models/Expense';
@@ -23,8 +23,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
         // Ensure month is always a string
         const currentMonth: string = month as string;
 
-        // 1. Get all members
-        const members = await Member.find({ active: true });
+        // 1. Get all active users (users are members)
+        const members = await User.find({ isActive: true });
 
         // 2. Get totals
         const groceries = await Grocery.find({ month });

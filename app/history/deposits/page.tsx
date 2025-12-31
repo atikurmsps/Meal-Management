@@ -125,7 +125,7 @@ export default function DepositHistoryPage() {
                                 deposits.map((deposit) => (
                                     <tr key={deposit._id} className="hover:bg-muted/10">
                                         <td className="px-6 py-4">{new Date(deposit.date).toLocaleDateString()}</td>
-                                        <td className="px-6 py-4 font-medium">{typeof deposit.memberId === 'object' ? (deposit.memberId as any).name : 'N/A'}</td>
+                                        <td className="px-6 py-4 font-medium">{typeof deposit.memberId === 'object' && deposit.memberId !== null ? (deposit.memberId as any).name : 'N/A'}</td>
                                         <td className="px-6 py-4 text-right font-medium">৳{deposit.amount.toFixed(0)}</td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-center gap-2">

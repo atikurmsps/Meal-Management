@@ -1,26 +1,34 @@
 import dbConnect from '@/lib/db';
-import Member from '@/models/Member';
+import User from '@/models/User';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import type { ApiResponse, Member as MemberType } from '@/types';
+import type { ApiResponse, User as UserType } from '@/types';
 
-export async function GET(request: NextRequest): Promise<NextResponse<ApiResponse<MemberType[]>>> {
+// Members API now returns active users (all users are members)
+export async function GET(request: NextRequest): Promise<NextResponse<ApiResponse<UserType[]>>> {
     await dbConnect();
     try {
-        const members = await Member.find({});
+        // Return all active users as members
+        const users = await User.find({ isActive: true }).select('-password').sort({ name: 1 });
+        
+        // Map to Member-like format for backward compatibility
+        const members = users.map(user => ({
+            _id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            active: user.isActive,
+        }));
+        
         return NextResponse.json({ success: true, data: members });
     } catch (error) {
         return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'An error occurred' }, { status: 400 });
     }
 }
 
-export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse<MemberType>>> {
-    await dbConnect();
-    try {
-        const body = await request.json();
-        const member = await Member.create(body);
-        return NextResponse.json({ success: true, data: member }, { status: 201 });
-    } catch (error) {
-        return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'An error occurred' }, { status: 400 });
-    }
+// POST is deprecated - use /api/users instead
+export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse<UserType>>> {
+    return NextResponse.json(
+        { success: false, error: 'Use /api/users endpoint to create users/members' },
+        { status: 400 }
+    );
 }

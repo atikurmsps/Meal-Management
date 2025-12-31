@@ -31,6 +31,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       _id: user._id.toString(),
       phoneNumber: user.phoneNumber,
       name: user.name,
+      email: user.email,
       role: user.role,
       assignedMonth: user.assignedMonth,
       isActive: user.isActive,
@@ -79,7 +80,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 
     const body = await request.json();
     console.log('Request body:', { ...body, password: '[HIDDEN]' });
-    const { name, phoneNumber, password, role, assignedMonth } = body;
+    let { name, phoneNumber, password, email, role, assignedMonth } = body;
+
+    // Trim all string fields to remove whitespace
+    name = typeof name === 'string' ? name.trim() : name;
+    phoneNumber = typeof phoneNumber === 'string' ? phoneNumber.trim() : phoneNumber;
 
     if (!name || !phoneNumber || !password || !role) {
       console.log('Missing required fields');
@@ -89,15 +94,31 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       );
     }
 
-    // Check if phone number already exists
-    const existingUser = await User.findOne({ phoneNumber });
+    // Check if phone number already exists (using trimmed value)
+    // The schema has trim: true, so we need to check with trimmed value
+    const trimmedPhoneNumber = phoneNumber.trim();
+    console.log('Checking for existing phone number:', trimmedPhoneNumber);
+    
+    const existingUser = await User.findOne({ phoneNumber: trimmedPhoneNumber });
     if (existingUser) {
-      console.log('Phone number already exists');
+      console.log('Phone number already exists:', {
+        existing: existingUser.phoneNumber,
+        existingId: existingUser._id,
+        attempted: trimmedPhoneNumber,
+        match: existingUser.phoneNumber === trimmedPhoneNumber
+      });
+      
+      // Also check all users to help debug
+      const allUsers = await User.find({}).select('phoneNumber name');
+      console.log('All existing phone numbers:', allUsers.map(u => ({ phone: u.phoneNumber, name: u.name })));
+      
       return NextResponse.json(
-        { success: false, error: 'Phone number already exists' },
+        { success: false, error: `Phone number "${trimmedPhoneNumber}" already exists` },
         { status: 409 }
       );
     }
+    
+    console.log('Phone number is unique, proceeding with user creation');
 
     if (!['general', 'manager', 'super'].includes(role)) {
       console.log('Invalid role:', role);
@@ -122,15 +143,24 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     console.log('Password hashed successfully');
 
     const userData: any = {
-      name,
-      phoneNumber,
+      name: name.trim(),
+      phoneNumber: trimmedPhoneNumber, // Use the trimmed version
       password: hashedPassword,
       role,
       isActive: true,
     };
 
-    if (role === 'manager') {
+    // Add email if provided
+    if (email && typeof email === 'string') {
+      userData.email = email.trim();
+    }
+
+    // Only set assignedMonth if role is manager and it's provided
+    if (role === 'manager' && assignedMonth) {
       userData.assignedMonth = assignedMonth;
+    } else if (role !== 'manager') {
+      // Explicitly set to undefined for non-managers to avoid validation issues
+      userData.assignedMonth = undefined;
     }
 
     console.log('Creating user with data:', { ...userData, password: '[HIDDEN]' });
@@ -141,6 +171,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       _id: user._id.toString(),
       phoneNumber: user.phoneNumber,
       name: user.name,
+      email: user.email,
       role: user.role,
       assignedMonth: user.assignedMonth,
       isActive: user.isActive,
@@ -155,8 +186,24 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }, { status: 201 });
   } catch (error) {
     console.error('Create user error:', error);
+    
+    // Provide more detailed error messages
+    let errorMessage = 'Internal server error';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      // Handle Mongoose validation errors
+      if (error.name === 'ValidationError' && 'errors' in error) {
+        const validationErrors = Object.values((error as any).errors).map((err: any) => err.message);
+        errorMessage = validationErrors.join(', ');
+      }
+      // Handle duplicate key errors
+      if (error.message.includes('E11000') || error.message.includes('duplicate key')) {
+        errorMessage = 'Phone number already exists';
+      }
+    }
+    
     return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : 'Internal server error' },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }
@@ -239,6 +286,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiRespons
       _id: user._id.toString(),
       phoneNumber: user.phoneNumber,
       name: user.name,
+      email: user.email,
       role: user.role,
       assignedMonth: user.assignedMonth,
       isActive: user.isActive,

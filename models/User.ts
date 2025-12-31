@@ -8,7 +8,8 @@ export interface IUser extends mongoose.Document {
   role: UserRole;
   assignedMonth?: string; // For managers - the month they can manage
   name: string;
-  isActive: boolean;
+  email?: string; // Optional email field
+  isActive: boolean; // Replaces the old 'active' field from Member
   createdAt: Date;
   updatedAt: Date;
 }
@@ -38,6 +39,12 @@ const UserSchema = new mongoose.Schema<IUser>({
   name: {
     type: String,
     required: true,
+    trim: true,
+    maxlength: [60, 'Name cannot be more than 60 characters'],
+  },
+  email: {
+    type: String,
+    required: false,
     trim: true,
   },
   isActive: {

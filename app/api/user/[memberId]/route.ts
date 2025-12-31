@@ -1,5 +1,5 @@
 import dbConnect from '@/lib/db';
-import Member from '@/models/Member';
+import User from '@/models/User';
 import Meal from '@/models/Meal';
 import Grocery from '@/models/Grocery';
 import Expense from '@/models/Expense';
@@ -33,17 +33,17 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             return NextResponse.json({ success: false, error: 'Month is required' }, { status: 400 });
         }
 
-        // Get member info
-        console.log('Looking up member with ID:', memberId);
-        const member = await Member.findById(memberId);
-        console.log('Member found:', !!member, member?.name);
+        // Get user/member info (users are members)
+        console.log('Looking up user/member with ID:', memberId);
+        const member = await User.findById(memberId).select('-password');
+        console.log('User/Member found:', !!member, member?.name);
 
         if (!member) {
-            console.log('Member not found for ID:', memberId);
-            // Let's also check how many members exist
-            const totalMembers = await Member.countDocuments();
-            console.log('Total members in database:', totalMembers);
-            return NextResponse.json({ success: false, error: 'Member not found' }, { status: 404 });
+            console.log('User/Member not found for ID:', memberId);
+            // Let's also check how many users exist
+            const totalUsers = await User.countDocuments({ isActive: true });
+            console.log('Total active users in database:', totalUsers);
+            return NextResponse.json({ success: false, error: 'User/Member not found' }, { status: 404 });
         }
 
         // Get all data for calculations

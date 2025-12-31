@@ -125,11 +125,24 @@ export default function ExpenseHistoryPage() {
                         <tbody className="divide-y divide-border">
                             {members.map((member) => {
                                 const paid = expenses
-                                    .filter(exp => (typeof exp.paidBy === 'object' ? (exp.paidBy as any)._id : exp.paidBy) === member._id)
+                                    .filter(exp => {
+                                        if (!exp.paidBy) return false;
+                                        const paidById = typeof exp.paidBy === 'object' && exp.paidBy !== null 
+                                            ? (exp.paidBy as any)._id 
+                                            : exp.paidBy;
+                                        return paidById === member._id;
+                                    })
                                     .reduce((sum, exp) => sum + exp.amount, 0);
 
                                 const share = expenses
-                                    .filter(exp => exp.splitAmong?.some((m: any) => (typeof m === 'object' ? m._id : m) === member._id))
+                                    .filter(exp => {
+                                        if (!exp.splitAmong || exp.splitAmong.length === 0) return false;
+                                        return exp.splitAmong.some((m: any) => {
+                                            if (!m) return false;
+                                            const memberId = typeof m === 'object' && m !== null ? m._id : m;
+                                            return memberId === member._id;
+                                        });
+                                    })
                                     .reduce((sum, exp) => sum + (exp.amount / exp.splitAmong.length), 0);
 
                                 const balance = paid - share;
@@ -178,13 +191,13 @@ export default function ExpenseHistoryPage() {
                                     <tr key={expense._id} className="hover:bg-muted/10">
                                         <td className="px-6 py-4">{new Date(expense.date).toLocaleDateString()}</td>
                                         <td className="px-6 py-4 font-medium">{expense.description}</td>
-                                        <td className="px-6 py-4">{typeof expense.paidBy === 'object' ? (expense.paidBy as any).name : 'N/A'}</td>
+                                        <td className="px-6 py-4">{typeof expense.paidBy === 'object' && expense.paidBy !== null ? (expense.paidBy as any).name : 'N/A'}</td>
                                         <td className="px-6 py-4 text-sm">
                                             {expense.splitAmong?.length > 0 ? (
                                                 <div className="flex flex-wrap gap-1">
                                                     {expense.splitAmong.map((member: any, idx) => (
                                                         <span key={idx} className="inline-block px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
-                                                            {typeof member === 'object' ? member.name : member}
+                                                            {typeof member === 'object' && member !== null ? member.name : 'Unknown'}
                                                         </span>
                                                     ))}
                                                 </div>

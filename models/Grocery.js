@@ -15,12 +15,12 @@ const GrocerySchema = new mongoose.Schema({
     },
     doneBy: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Member',
+        ref: 'User',
         required: true,
     },
     addedBy: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Member',
+        ref: 'User',
         required: false, // Optional if generic admin adds it
     },
     note: {

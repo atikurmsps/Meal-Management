@@ -128,7 +128,7 @@ export default function GroceryHistoryPage() {
                                     <tr key={grocery._id} className="hover:bg-muted/10">
                                         <td className="px-6 py-4">{new Date(grocery.date).toLocaleDateString()}</td>
                                         <td className="px-6 py-4 font-medium">{grocery.description}</td>
-                                        <td className="px-6 py-4">{typeof grocery.doneBy === 'object' ? (grocery.doneBy as any).name : '-'}</td>
+                                        <td className="px-6 py-4">{typeof grocery.doneBy === 'object' && grocery.doneBy !== null ? (grocery.doneBy as any).name : '-'}</td>
                                         <td className="px-6 py-4 text-muted-foreground">{grocery.note}</td>
                                         <td className="px-6 py-4 text-right font-medium">৳{grocery.amount.toFixed(0)}</td>
                                         <td className="px-6 py-4">

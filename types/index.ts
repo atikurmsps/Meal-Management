@@ -6,6 +6,8 @@ export interface ApiResponse<T = any> {
 }
 
 // Data Models
+// Note: Member is now replaced by User - all users are members
+// Keeping this for backward compatibility during migration
 export interface Member {
   _id: string;
   name: string;
@@ -61,6 +63,7 @@ export interface User {
   _id: string;
   phoneNumber: string;
   name: string;
+  email?: string;
   role: UserRole;
   assignedMonth?: string;
   isActive: boolean;

@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const DepositSchema = new mongoose.Schema({
     memberId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Member',
+        ref: 'User',
         required: true,
     },
     amount: {

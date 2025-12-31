@@ -15,12 +15,12 @@ const ExpenseSchema = new mongoose.Schema({
     },
     paidBy: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Member',
+        ref: 'User',
         required: true,
     },
     splitAmong: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Member',
+        ref: 'User',
         required: true,
     }],
     note: {

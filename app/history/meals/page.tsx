@@ -128,7 +128,7 @@ export default function MealHistoryPage() {
                                 meals.map((meal) => (
                                     <tr key={meal._id} className="hover:bg-muted/10">
                                         <td className="px-6 py-4">{new Date(meal.date).toLocaleDateString()}</td>
-                                        <td className="px-6 py-4 font-medium">{typeof meal.memberId === 'object' ? (meal.memberId as any).name : 'Unknown'}</td>
+                                        <td className="px-6 py-4 font-medium">{typeof meal.memberId === 'object' && meal.memberId !== null ? (meal.memberId as any).name : 'Unknown'}</td>
                                         <td className="px-6 py-4 text-right font-medium">{meal.count}</td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-center gap-2">
