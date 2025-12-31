@@ -91,13 +91,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
 
         const responseData: DashboardData = {
             month: currentMonth,
-            totalGrocery,
-            totalMeals,
-            totalDeposit,
-            totalExpense,
-            totalBalance,
-            mealRate,
-            memberStats
+                totalGrocery,
+                totalMeals,
+                totalDeposit,
+                totalExpense,
+                totalBalance,
+                mealRate,
+                memberStats
         };
 
         return NextResponse.json({

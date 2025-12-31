@@ -110,36 +110,36 @@ export default function Dashboard() {
                     <p className="text-muted-foreground text-lg">Overview for {data.month}</p>
                 </div>
                 {(permissions.canManageData || permissions.canManageCurrentMonth) && (
-                    <div className="flex flex-wrap gap-3">
-                        <button
-                            onClick={() => setIsMealModalOpen(true)}
-                            className="btn inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2.5 text-sm font-medium rounded-lg shadow-sm"
-                        >
-                            <Utensils className="h-4 w-4" />
-                            Add Meal
-                        </button>
-                        <button
-                            onClick={() => setIsGroceryModalOpen(true)}
-                            className="btn inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-2.5 text-sm font-medium rounded-lg shadow-sm"
-                        >
-                            <ShoppingCart className="h-4 w-4" />
-                            Add Grocery
-                        </button>
-                        <button
-                            onClick={() => setIsExpenseModalOpen(true)}
-                            className="btn inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-2.5 text-sm font-medium rounded-lg shadow-sm"
-                        >
-                            <Receipt className="h-4 w-4" />
-                            Add Expense
-                        </button>
-                        <button
-                            onClick={() => setIsDepositModalOpen(true)}
-                            className="btn inline-flex items-center gap-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground px-4 py-2.5 text-sm font-medium rounded-lg shadow-sm border border-border"
-                        >
-                            <Wallet className="h-4 w-4" />
-                            Add Deposit
-                        </button>
-                    </div>
+                <div className="flex flex-wrap gap-3">
+                    <button
+                        onClick={() => setIsMealModalOpen(true)}
+                        className="btn inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2.5 text-sm font-medium rounded-lg shadow-sm"
+                    >
+                        <Utensils className="h-4 w-4" />
+                        Add Meal
+                    </button>
+                    <button
+                        onClick={() => setIsGroceryModalOpen(true)}
+                        className="btn inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-2.5 text-sm font-medium rounded-lg shadow-sm"
+                    >
+                        <ShoppingCart className="h-4 w-4" />
+                        Add Grocery
+                    </button>
+                    <button
+                        onClick={() => setIsExpenseModalOpen(true)}
+                        className="btn inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-accent-foreground px-4 py-2.5 text-sm font-medium rounded-lg shadow-sm"
+                    >
+                        <Receipt className="h-4 w-4" />
+                        Add Expense
+                    </button>
+                    <button
+                        onClick={() => setIsDepositModalOpen(true)}
+                        className="btn inline-flex items-center gap-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground px-4 py-2.5 text-sm font-medium rounded-lg shadow-sm border border-border"
+                    >
+                        <Wallet className="h-4 w-4" />
+                        Add Deposit
+                    </button>
+                </div>
                 )}
             </div>
 

@@ -125,8 +125,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         });
     } catch (error) {
         console.error('Error in member API:', error);
-        return NextResponse.json({
-            success: false,
+        return NextResponse.json({ 
+            success: false, 
             error: error instanceof Error ? error.message : 'An error occurred while fetching member data'
         }, { status: 500 });
     }

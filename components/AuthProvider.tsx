@@ -34,7 +34,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await fetch('/api/auth/me');
       if (!response.ok) {
-        console.error('Auth me API failed:', response.status, response.statusText);
+        // 401 is expected when not authenticated - don't log as error
+        if (response.status !== 401) {
+          console.error('Auth me API failed:', response.status, response.statusText);
+        }
         setUser(null);
         setPermissions({
           canViewAll: false,
@@ -70,7 +73,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
       }
     } catch (error) {
-      console.error('Auth refresh error:', error);
+      // Only log unexpected errors (network issues, etc.)
+      // Don't log if it's just a failed fetch due to no auth
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        // Network error - might be expected in some cases
+        console.warn('Auth refresh network error:', error);
+      } else {
+        console.error('Auth refresh error:', error);
+      }
       setUser(null);
       setPermissions({
         canViewAll: false,

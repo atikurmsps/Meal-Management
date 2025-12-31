@@ -78,9 +78,13 @@ function SidebarComponent() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'logout' }),
             });
-            router.push('/login');
+            // Use window.location for a hard redirect to ensure full page reload
+            // This will trigger AuthProvider to refresh auth state on the login page
+            window.location.href = '/login';
         } catch (error) {
             console.error('Logout error:', error);
+            // Even if there's an error, redirect to login
+            window.location.href = '/login';
         }
     };
 

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, Phone, Lock } from 'lucide-react';
 import type { LoginRequest } from '@/types';
@@ -14,7 +13,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,14 +29,15 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (data.success) {
-        router.push('/');
-        router.refresh();
+        // Use window.location for a hard redirect to ensure full page reload
+        // This will trigger AuthProvider to refresh auth state on the new page
+        window.location.href = '/';
       } else {
         setError(data.error || 'Login failed');
+        setIsLoading(false);
       }
     } catch (error) {
       setError('An error occurred during login');
-    } finally {
       setIsLoading(false);
     }
   };

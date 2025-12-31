@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff, Phone, Lock, User } from 'lucide-react';
 import type { SignupRequest } from '@/types';
@@ -16,7 +15,6 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isFirstUser, setIsFirstUser] = useState(false);
-  const router = useRouter();
 
   useEffect(() => {
     // Check if this is the first user
@@ -48,14 +46,15 @@ export default function SignupPage() {
       const data = await response.json();
 
       if (data.success) {
-        router.push('/');
-        router.refresh();
+        // Use window.location for a hard redirect to ensure full page reload
+        // This will trigger AuthProvider to refresh auth state on the new page
+        window.location.href = '/';
       } else {
         setError(data.error || 'Signup failed');
+        setIsLoading(false);
       }
     } catch (error) {
       setError('An error occurred during signup');
-    } finally {
       setIsLoading(false);
     }
   };
