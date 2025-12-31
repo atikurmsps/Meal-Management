@@ -76,7 +76,7 @@ async function handleLogin(data: LoginRequest): Promise<NextResponse<ApiResponse
       phoneNumber: user.phoneNumber,
       name: user.name,
       role: user.role,
-      assignedMonth: user.assignedMonth,
+      assignedMonths: user.assignedMonths,
     };
 
     const token = generateToken(authUser);

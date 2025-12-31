@@ -16,7 +16,7 @@ export default function SettingsPage() {
         password: '', 
         email: '',
         role: 'general' as 'general' | 'manager' | 'super', 
-        assignedMonth: '' 
+        assignedMonths: [] as string[]
     });
     const [currentMonth, setCurrentMonth] = useState<string>('');
     const [pendingMonth, setPendingMonth] = useState<string>('');
@@ -27,10 +27,12 @@ export default function SettingsPage() {
         name: '',
         phoneNumber: '',
         role: 'general' as 'general' | 'manager' | 'super',
-        assignedMonth: '',
+        assignedMonths: [] as string[],
         password: '',
         isActive: true,
     });
+    const [newUserMonthInput, setNewUserMonthInput] = useState<string>('');
+    const [editFormMonthInput, setEditFormMonthInput] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
@@ -98,9 +100,9 @@ export default function SettingsPage() {
         e.preventDefault();
         if (!newUser.name.trim() || !newUser.phoneNumber.trim() || !newUser.password.trim()) return;
 
-        // Validate manager role has assigned month
-        if (newUser.role === 'manager' && !newUser.assignedMonth) {
-            alert('Managers must have an assigned month');
+        // Validate manager role has assigned months
+        if (newUser.role === 'manager' && (!newUser.assignedMonths || newUser.assignedMonths.length === 0)) {
+            alert('Managers must have at least one assigned month');
             return;
         }
 
@@ -118,8 +120,8 @@ export default function SettingsPage() {
                 userData.email = newUser.email.trim();
             }
 
-            if (newUser.role === 'manager' && newUser.assignedMonth) {
-                userData.assignedMonth = newUser.assignedMonth;
+            if (newUser.role === 'manager' && newUser.assignedMonths && newUser.assignedMonths.length > 0) {
+                userData.assignedMonths = newUser.assignedMonths;
             }
 
             const res = await fetch('/api/users', {
@@ -150,7 +152,8 @@ export default function SettingsPage() {
 
             if (data.success) {
                 setUsers([...users, data.data]);
-                setNewUser({ name: '', phoneNumber: '', password: '', email: '', role: 'general', assignedMonth: '' });
+                setNewUser({ name: '', phoneNumber: '', password: '', email: '', role: 'general', assignedMonths: [] });
+                setNewUserMonthInput('');
                 setShowAddUserModal(false);
             }
         } catch (error) {
@@ -165,19 +168,20 @@ export default function SettingsPage() {
             name: user.name,
             phoneNumber: user.phoneNumber,
             role: user.role,
-            assignedMonth: user.assignedMonth || '',
+            assignedMonths: user.assignedMonths || [],
             password: '',
             isActive: user.isActive,
         });
+        setEditFormMonthInput('');
     };
 
     const handleUpdateUser = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!editingUser) return;
 
-        // Validate manager role has assigned month
-        if (editForm.role === 'manager' && !editForm.assignedMonth) {
-            alert('Managers must have an assigned month');
+        // Validate manager role has assigned months
+        if (editForm.role === 'manager' && (!editForm.assignedMonths || editForm.assignedMonths.length === 0)) {
+            alert('Managers must have at least one assigned month');
             return;
         }
 
@@ -195,8 +199,8 @@ export default function SettingsPage() {
                 return;
             }
 
-            if (editForm.role === 'manager' && editForm.assignedMonth) {
-                updateData.assignedMonth = editForm.assignedMonth;
+            if (editForm.role === 'manager' && editForm.assignedMonths && editForm.assignedMonths.length > 0) {
+                updateData.assignedMonths = editForm.assignedMonths;
             }
 
             // Only include password if it's provided
@@ -224,7 +228,8 @@ export default function SettingsPage() {
             if (data.success) {
                 setUsers(users.map(user => user._id === editingUser._id ? data.data : user));
                 setEditingUser(null);
-                setEditForm({ name: '', phoneNumber: '', role: 'general', assignedMonth: '', password: '', isActive: true });
+                setEditForm({ name: '', phoneNumber: '', role: 'general', assignedMonths: [], password: '', isActive: true });
+                setEditFormMonthInput('');
             }
         } catch (error) {
             console.error('Error updating user:', error);
@@ -296,9 +301,9 @@ export default function SettingsPage() {
                                             {user.role === 'super' ? 'Super User' :
                                              user.role === 'manager' ? 'Manager' : 'General User'}
                                         </span>
-                                        {user.role === 'manager' && user.assignedMonth && (
+                                        {user.role === 'manager' && user.assignedMonths && user.assignedMonths.length > 0 && (
                                             <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800">
-                                                {formatMonth(user.assignedMonth)}
+                                                {user.assignedMonths.map(m => formatMonth(m)).join(', ')}
                                             </span>
                                         )}
                                         <span className={`text-xs px-2 py-1 rounded-full ${user.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
@@ -365,7 +370,8 @@ export default function SettingsPage() {
                             <button 
                                 onClick={() => {
                                     setShowAddUserModal(false);
-                                    setNewUser({ name: '', phoneNumber: '', password: '', email: '', role: 'general', assignedMonth: '' });
+                                    setNewUser({ name: '', phoneNumber: '', password: '', email: '', role: 'general', assignedMonths: [] });
+                                    setNewUserMonthInput('');
                                 }}
                                 className="text-muted-foreground hover:text-foreground"
                             >
@@ -434,14 +440,81 @@ export default function SettingsPage() {
 
                             {newUser.role === 'manager' && (
                                 <div>
-                                    <label className="block text-sm font-medium text-muted-foreground mb-1">Assigned Month *</label>
-                                    <input
-                                        type="month"
-                                        value={newUser.assignedMonth}
-                                        onChange={(e) => setNewUser(prev => ({ ...prev, assignedMonth: e.target.value }))}
-                                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground focus:border-primary focus:ring-1 focus:ring-primary"
-                                        required
-                                    />
+                                    <label className="block text-sm font-medium text-muted-foreground mb-2">Assigned Months *</label>
+                                    <div className="space-y-3">
+                                        {/* Selected Months List */}
+                                        {newUser.assignedMonths.length > 0 && (
+                                            <div className="flex flex-wrap gap-2">
+                                                {newUser.assignedMonths.map((month, index) => (
+                                                    <span
+                                                        key={index}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium"
+                                                    >
+                                                        {formatMonth(month)}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setNewUser(prev => ({
+                                                                    ...prev,
+                                                                    assignedMonths: prev.assignedMonths.filter((_, i) => i !== index)
+                                                                }));
+                                                            }}
+                                                            className="ml-1 text-primary hover:text-primary/80 focus:outline-none"
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </button>
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                        
+                                        {/* Add Month Picker */}
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="month"
+                                                value={newUserMonthInput}
+                                                onChange={(e) => setNewUserMonthInput(e.target.value)}
+                                                className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-foreground focus:border-primary focus:ring-1 focus:ring-primary"
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        if (newUserMonthInput) {
+                                                            if (!newUser.assignedMonths.includes(newUserMonthInput)) {
+                                                                setNewUser(prev => ({
+                                                                    ...prev,
+                                                                    assignedMonths: [...prev.assignedMonths, newUserMonthInput].sort()
+                                                                }));
+                                                                setNewUserMonthInput('');
+                                                            }
+                                                        }
+                                                    }
+                                                }}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    if (newUserMonthInput) {
+                                                        if (!newUser.assignedMonths.includes(newUserMonthInput)) {
+                                                            setNewUser(prev => ({
+                                                                ...prev,
+                                                                assignedMonths: [...prev.assignedMonths, newUserMonthInput].sort()
+                                                            }));
+                                                            setNewUserMonthInput('');
+                                                        } else {
+                                                            alert('This month is already selected');
+                                                        }
+                                                    }
+                                                }}
+                                                className="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium whitespace-nowrap"
+                                            >
+                                                <Plus className="h-4 w-4 inline mr-1" />
+                                                Add Month
+                                            </button>
+                                        </div>
+                                        {newUser.assignedMonths.length === 0 && (
+                                            <p className="text-xs text-muted-foreground">Select at least one month</p>
+                                        )}
+                                    </div>
                                 </div>
                             )}
 
@@ -450,7 +523,8 @@ export default function SettingsPage() {
                                     type="button"
                                     onClick={() => {
                                         setShowAddUserModal(false);
-                                        setNewUser({ name: '', phoneNumber: '', password: '', email: '', role: 'general', assignedMonth: '' });
+                                        setNewUser({ name: '', phoneNumber: '', password: '', email: '', role: 'general', assignedMonths: [] });
+                                        setNewUserMonthInput('');
                                     }}
                                     className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
                                 >
@@ -477,7 +551,8 @@ export default function SettingsPage() {
                             <button 
                                 onClick={() => {
                                     setEditingUser(null);
-                                    setEditForm({ name: '', phoneNumber: '', role: 'general', assignedMonth: '', password: '', isActive: true });
+                                    setEditForm({ name: '', phoneNumber: '', role: 'general', assignedMonths: [], password: '', isActive: true });
+                                    setEditFormMonthInput('');
                                 }}
                                 className="text-muted-foreground hover:text-foreground"
                             >
@@ -523,14 +598,81 @@ export default function SettingsPage() {
 
                             {editForm.role === 'manager' && (
                                 <div>
-                                    <label className="block text-sm font-medium text-muted-foreground mb-1">Assigned Month</label>
-                                    <input
-                                        type="month"
-                                        value={editForm.assignedMonth}
-                                        onChange={(e) => setEditForm(prev => ({ ...prev, assignedMonth: e.target.value }))}
-                                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-foreground focus:border-primary focus:ring-1 focus:ring-primary"
-                                        required
-                                    />
+                                    <label className="block text-sm font-medium text-muted-foreground mb-2">Assigned Months</label>
+                                    <div className="space-y-3">
+                                        {/* Selected Months List */}
+                                        {editForm.assignedMonths.length > 0 && (
+                                            <div className="flex flex-wrap gap-2">
+                                                {editForm.assignedMonths.map((month, index) => (
+                                                    <span
+                                                        key={index}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-primary/10 text-primary text-sm font-medium"
+                                                    >
+                                                        {formatMonth(month)}
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setEditForm(prev => ({
+                                                                    ...prev,
+                                                                    assignedMonths: prev.assignedMonths.filter((_, i) => i !== index)
+                                                                }));
+                                                            }}
+                                                            className="ml-1 text-primary hover:text-primary/80 focus:outline-none"
+                                                        >
+                                                            <X className="h-4 w-4" />
+                                                        </button>
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                        
+                                        {/* Add Month Picker */}
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="month"
+                                                value={editFormMonthInput}
+                                                onChange={(e) => setEditFormMonthInput(e.target.value)}
+                                                className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-foreground focus:border-primary focus:ring-1 focus:ring-primary"
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.preventDefault();
+                                                        if (editFormMonthInput) {
+                                                            if (!editForm.assignedMonths.includes(editFormMonthInput)) {
+                                                                setEditForm(prev => ({
+                                                                    ...prev,
+                                                                    assignedMonths: [...prev.assignedMonths, editFormMonthInput].sort()
+                                                                }));
+                                                                setEditFormMonthInput('');
+                                                            }
+                                                        }
+                                                    }
+                                                }}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    if (editFormMonthInput) {
+                                                        if (!editForm.assignedMonths.includes(editFormMonthInput)) {
+                                                            setEditForm(prev => ({
+                                                                ...prev,
+                                                                assignedMonths: [...prev.assignedMonths, editFormMonthInput].sort()
+                                                            }));
+                                                            setEditFormMonthInput('');
+                                                        } else {
+                                                            alert('This month is already selected');
+                                                        }
+                                                    }
+                                                }}
+                                                className="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium whitespace-nowrap"
+                                            >
+                                                <Plus className="h-4 w-4 inline mr-1" />
+                                                Add Month
+                                            </button>
+                                        </div>
+                                        {editForm.assignedMonths.length === 0 && (
+                                            <p className="text-xs text-muted-foreground">Select at least one month</p>
+                                        )}
+                                    </div>
                                 </div>
                             )}
 
@@ -567,7 +709,8 @@ export default function SettingsPage() {
                                     type="button"
                                     onClick={() => {
                                         setEditingUser(null);
-                                        setEditForm({ name: '', phoneNumber: '', role: 'general', assignedMonth: '', password: '', isActive: true });
+                                        setEditForm({ name: '', phoneNumber: '', role: 'general', assignedMonths: [], password: '', isActive: true });
+                                        setEditFormMonthInput('');
                                     }}
                                     className="rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
                                 >

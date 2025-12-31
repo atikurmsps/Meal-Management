@@ -15,7 +15,7 @@ export default function DepositHistoryPage() {
     const canManageThisMonth = (monthToCheck: string) => {
         if (!user) return false;
         if (user.role === 'super') return true;
-        if (user.role === 'manager' && user.assignedMonth === monthToCheck) return true;
+        if (user.role === 'manager' && user.assignedMonths && user.assignedMonths.includes(monthToCheck)) return true;
         return false;
     };
     const [deposits, setDeposits] = useState<Deposit[]>([]);
@@ -241,7 +241,7 @@ export default function DepositHistoryPage() {
                     setEditingDeposit(null);
                 }}
                 members={members}
-                assignedMonth={user?.assignedMonth}
+                assignedMonths={user?.assignedMonths}
                 onSave={handleSave}
                 editData={editingDeposit}
             />

@@ -6,7 +6,7 @@ export interface IUser extends mongoose.Document {
   phoneNumber: string;
   password: string;
   role: UserRole;
-  assignedMonth?: string; // For managers - the month they can manage
+  assignedMonths?: string[]; // For managers - the months they can manage (array)
   name: string;
   email?: string; // Optional email field
   isActive: boolean; // Replaces the old 'active' field from Member
@@ -32,11 +32,22 @@ const UserSchema = new mongoose.Schema<IUser>({
     enum: ['general', 'manager', 'super'],
     default: 'general',
   },
-  assignedMonth: {
-    type: String, // Format: YYYY-MM
-    required: function() {
-      return (this as any).role === 'manager';
+  assignedMonths: {
+    type: [String], // Array of months in YYYY-MM format
+    required: function(this: IUser) {
+      return this.role === 'manager';
     },
+    validate: {
+      validator: function(this: IUser, value: string[]) {
+        // Only validate if role is manager
+        if (this.role === 'manager') {
+          return Array.isArray(value) && value.length > 0;
+        }
+        return true; // Not a manager, validation passes
+      },
+      message: 'Managers must have at least one assigned month'
+    },
+    default: undefined,
   },
   name: {
     type: String,
@@ -61,9 +72,15 @@ const UserSchema = new mongoose.Schema<IUser>({
 UserSchema.index({ isActive: 1 }); // For filtering active users
 // phoneNumber index is already created by unique: true, so we don't need to add it again
 UserSchema.index({ role: 1 }); // For role-based queries
-UserSchema.index({ assignedMonth: 1 }); // For manager month queries
+UserSchema.index({ assignedMonths: 1 }); // For manager month queries
 
-const UserModel = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
+// Force recompile the model to ensure we're using the latest schema
+// This is important when schema fields change (e.g., assignedMonth -> assignedMonths)
+if (mongoose.models.User) {
+  delete (mongoose.models as any).User;
+}
+
+const UserModel = mongoose.model<IUser>('User', UserSchema);
 
 // Clean up any existing users with null/empty phoneNumber on model initialization
 // This helps prevent the duplicate key error

@@ -15,7 +15,7 @@ export default function ExpenseHistoryPage() {
     const canManageThisMonth = (monthToCheck: string) => {
         if (!user) return false;
         if (user.role === 'super') return true;
-        if (user.role === 'manager' && user.assignedMonth === monthToCheck) return true;
+        if (user.role === 'manager' && user.assignedMonths && user.assignedMonths.includes(monthToCheck)) return true;
         return false;
     };
     const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -345,7 +345,7 @@ export default function ExpenseHistoryPage() {
                     setEditingExpense(null);
                 }}
                 members={members}
-                assignedMonth={user?.assignedMonth}
+                assignedMonths={user?.assignedMonths}
                 onSave={handleSave}
                 editData={editingExpense}
             />

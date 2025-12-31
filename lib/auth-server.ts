@@ -18,12 +18,12 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     }
 
     // Verify user still exists and is active - only select needed fields
-    const user = await User.findById(decoded._id).select('_id phoneNumber name role assignedMonth isActive').lean() as {
+    const user = await User.findById(decoded._id).select('_id phoneNumber name role assignedMonths isActive').lean() as {
       _id: any;
       phoneNumber: string;
       name: string;
       role: string;
-      assignedMonth?: string;
+      assignedMonths?: string[];
       isActive: boolean;
     } | null;
     if (!user || !user.isActive) {
@@ -35,7 +35,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       phoneNumber: user.phoneNumber,
       name: user.name,
       role: user.role as 'general' | 'manager' | 'super',
-      assignedMonth: user.assignedMonth,
+      assignedMonths: user.assignedMonths,
     };
   } catch (error) {
     return null;
@@ -71,14 +71,25 @@ export function getUserPermissions(user: AuthUser | null, currentMonth: string):
   const permissions: UserPermissions = {
     canViewAll: user.role === 'super' || user.role === 'manager',
     canManageMembers: user.role === 'super',
-    canManageData: user.role === 'super',
-    canManageCurrentMonth: user.role === 'super',
+    canManageData: user.role === 'super' || user.role === 'manager',
+    canManageCurrentMonth: false,
     canManageAssignedMonth: false,
-    assignedMonth: user.assignedMonth,
+    assignedMonths: user.assignedMonths,
   };
 
-  if (user.role === 'manager' && user.assignedMonth) {
+  // Super users can manage any month
+  if (user.role === 'super') {
+    permissions.canManageCurrentMonth = true;
     permissions.canManageAssignedMonth = true;
+  } 
+  // Managers can manage their assigned months
+  else if (user.role === 'manager' && user.assignedMonths && user.assignedMonths.length > 0) {
+    permissions.canManageAssignedMonth = true;
+    // Check if current month is in assigned months
+    const currentMonth = new Date().toISOString().slice(0, 7);
+    if (user.assignedMonths.includes(currentMonth)) {
+      permissions.canManageCurrentMonth = true;
+    }
   }
 
   return permissions;
@@ -88,7 +99,7 @@ export function canUserManageMonth(user: AuthUser | null, month: string): boolea
   if (!user) return false;
 
   if (user.role === 'super') return true;
-  if (user.role === 'manager' && user.assignedMonth === month) return true;
+  if (user.role === 'manager' && user.assignedMonths && user.assignedMonths.includes(month)) return true;
 
   return false;
 }

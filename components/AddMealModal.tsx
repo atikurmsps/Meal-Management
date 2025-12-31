@@ -5,11 +5,12 @@ import { X } from 'lucide-react';
 import { formatMonth } from '@/lib/dateUtils';
 import type { AddMealModalProps, Member } from '@/types';
 
-export default function AddMealModal({ isOpen, onClose, members, assignedMonth, onSave }: AddMealModalProps) {
-    // For managers, set initial date to first day of assigned month, otherwise use today
+export default function AddMealModal({ isOpen, onClose, members, assignedMonths, onSave }: AddMealModalProps) {
+    // For managers, set initial date to first day of first assigned month, otherwise use today
     const getInitialDate = () => {
-        if (assignedMonth) {
-            return `${assignedMonth}-01`;
+        if (assignedMonths && assignedMonths.length > 0) {
+            const sortedMonths = [...assignedMonths].sort();
+            return `${sortedMonths[0]}-01`;
         }
         return new Date().toISOString().slice(0, 10);
     };
@@ -17,22 +18,32 @@ export default function AddMealModal({ isOpen, onClose, members, assignedMonth, 
     const [date, setDate] = useState<string>(getInitialDate());
     const [mealCounts, setMealCounts] = useState<Record<string, string>>({});
     
-    // Calculate min and max dates for managers
+    // Calculate min and max dates for managers (based on all assigned months)
     const getMinDate = () => {
-        if (assignedMonth) {
-            return `${assignedMonth}-01`;
+        if (assignedMonths && assignedMonths.length > 0) {
+            const sortedMonths = [...assignedMonths].sort();
+            return `${sortedMonths[0]}-01`;
         }
         return undefined;
     };
     
     const getMaxDate = () => {
-        if (assignedMonth) {
-            // Get last day of the assigned month
-            const [year, month] = assignedMonth.split('-');
+        if (assignedMonths && assignedMonths.length > 0) {
+            const sortedMonths = [...assignedMonths].sort();
+            const lastMonth = sortedMonths[sortedMonths.length - 1];
+            // Get last day of the last assigned month
+            const [year, month] = lastMonth.split('-');
             const lastDay = new Date(parseInt(year), parseInt(month), 0).getDate();
-            return `${assignedMonth}-${lastDay.toString().padStart(2, '0')}`;
+            return `${lastMonth}-${lastDay.toString().padStart(2, '0')}`;
         }
         return undefined;
+    };
+    
+    // Check if a date falls within any assigned month
+    const isDateInAssignedMonths = (dateStr: string): boolean => {
+        if (!assignedMonths || assignedMonths.length === 0) return true;
+        const month = dateStr.slice(0, 7); // Extract YYYY-MM
+        return assignedMonths.includes(month);
     };
 
     useEffect(() => {
@@ -44,7 +55,7 @@ export default function AddMealModal({ isOpen, onClose, members, assignedMonth, 
             members.forEach(m => initialCounts[m._id] = '');
             setMealCounts(initialCounts);
         }
-    }, [isOpen, members, assignedMonth]);
+    }, [isOpen, members, assignedMonths]);
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -75,11 +86,11 @@ export default function AddMealModal({ isOpen, onClose, members, assignedMonth, 
                             value={date}
                             onChange={(e) => {
                                 const selectedDate = e.target.value;
-                                // Validate that selected date is within assigned month for managers
-                                if (assignedMonth) {
-                                    const selectedMonth = selectedDate.slice(0, 7);
-                                    if (selectedMonth !== assignedMonth) {
-                                        alert(`You can only add data for ${formatMonth(assignedMonth)}. Please select a date within this month.`);
+                                // Validate that selected date is within assigned months for managers
+                                if (assignedMonths && assignedMonths.length > 0) {
+                                    if (!isDateInAssignedMonths(selectedDate)) {
+                                        const monthsText = assignedMonths.map(m => formatMonth(m)).join(', ');
+                                        alert(`You can only add data for the following months: ${monthsText}. Please select a date within these months.`);
                                         return;
                                     }
                                 }
@@ -90,9 +101,9 @@ export default function AddMealModal({ isOpen, onClose, members, assignedMonth, 
                             className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-foreground focus:border-primary focus:ring-1 focus:ring-primary"
                             required
                         />
-                        {assignedMonth && (
+                        {assignedMonths && assignedMonths.length > 0 && (
                             <p className="mt-1 text-xs text-muted-foreground">
-                                You can only add data for {formatMonth(assignedMonth)}
+                                You can only add data for: {assignedMonths.map(m => formatMonth(m)).join(', ')}
                             </p>
                         )}
                     </div>

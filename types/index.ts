@@ -65,7 +65,7 @@ export interface User {
   name: string;
   email?: string;
   role: UserRole;
-  assignedMonth?: string;
+  assignedMonths?: string[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -76,7 +76,7 @@ export interface AuthUser {
   phoneNumber: string;
   name: string;
   role: UserRole;
-  assignedMonth?: string;
+  assignedMonths?: string[];
 }
 
 export interface LoginRequest {
@@ -98,7 +98,8 @@ export interface ChangePasswordRequest {
 export interface UpdateUserRoleRequest {
   userId: string;
   role?: UserRole;
-  assignedMonth?: string;
+  assignedMonths?: string[];
+  assignedMonth?: string; // Legacy field for backward compatibility during migration
   password?: string;
   isActive?: boolean;
   phoneNumber?: string;
@@ -112,7 +113,7 @@ export interface UserPermissions {
   canManageData: boolean;
   canManageCurrentMonth: boolean;
   canManageAssignedMonth: boolean;
-  assignedMonth?: string;
+  assignedMonths?: string[];
 }
 
 // Dashboard Data Types
@@ -188,25 +189,25 @@ export interface ModalProps {
 
 export interface AddMealModalProps extends ModalProps {
   members: Member[];
-  assignedMonth?: string; // For managers - restrict date selection to this month
+  assignedMonths?: string[]; // For managers - restrict date selection to these months
   onSave: (data: { date: string; meals: { memberId: string; count: number }[] }) => void;
 }
 
 export interface AddGroceryModalProps extends ModalProps {
   members: Member[];
-  assignedMonth?: string; // For managers - restrict date selection to this month
+  assignedMonths?: string[]; // For managers - restrict date selection to these months
   onSave: (data: { doneBy: string; description: string; amount: number; note?: string; date: string }) => void;
 }
 
 export interface AddExpenseModalProps extends ModalProps {
   members: Member[];
-  assignedMonth?: string; // For managers - restrict date selection to this month
+  assignedMonths?: string[]; // For managers - restrict date selection to these months
   onSave: (data: { paidBy: string; splitAmong: string[]; description: string; amount: number; date: string }) => void;
 }
 
 export interface AddDepositModalProps extends ModalProps {
   members: Member[];
-  assignedMonth?: string; // For managers - restrict date selection to this month
+  assignedMonths?: string[]; // For managers - restrict date selection to these months
   onSave: (data: { memberId: string; amount: number; date: string }) => void;
 }
 

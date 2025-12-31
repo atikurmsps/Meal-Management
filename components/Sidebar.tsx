@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, Settings, ShoppingCart, Wallet, Utensils, Receipt, LogOut, User, ChevronDown, Eye, EyeOff, Lock } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useState, useEffect, memo } from 'react';
+import { createPortal } from 'react-dom';
 import ConfirmModal from './ConfirmModal';
 import { useAuth } from '@/components/AuthProvider';
 import type { ConfirmModalProps } from '@/types';
@@ -98,6 +99,7 @@ function SidebarComponent({ onClose }: { onClose?: () => void }) {
     };
 
     return (
+        <>
         <div className="flex h-full w-full lg:w-72 flex-col bg-white border-r border-border shadow-sm">
             {/* Header */}
             <div className="flex h-20 items-center justify-center border-b border-border bg-gradient-to-r from-primary/5 to-accent/5">
@@ -214,20 +216,26 @@ function SidebarComponent({ onClose }: { onClose?: () => void }) {
                     </p>
                 </div>
             </div>
-
-            <ConfirmModal
-                isOpen={showConfirmModal}
-                onClose={cancelMonthChange}
-                onConfirm={confirmMonthChange}
-                title="Switch Month"
-                message={`Are you sure you want to switch to ${pendingMonth}?\n\nThis will change the active month for all data and reload the page.`}
-            />
-
-            <ChangePasswordModal
-                isOpen={showPasswordModal}
-                onClose={() => setShowPasswordModal(false)}
-            />
         </div>
+
+        {/* Render modals outside sidebar using portal to avoid z-index issues */}
+        {typeof window !== 'undefined' && createPortal(
+            <>
+                <ConfirmModal
+                    isOpen={showConfirmModal}
+                    onClose={cancelMonthChange}
+                    onConfirm={confirmMonthChange}
+                    title="Switch Month"
+                    message={`Are you sure you want to switch to ${pendingMonth}?\n\nThis will change the active month for all data and reload the page.`}
+                />
+                <ChangePasswordModal
+                    isOpen={showPasswordModal}
+                    onClose={() => setShowPasswordModal(false)}
+                />
+            </>,
+            document.body
+        )}
+        </>
     );
 }
 

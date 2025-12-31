@@ -15,7 +15,7 @@ export default function GroceryHistoryPage() {
     const canManageThisMonth = (monthToCheck: string) => {
         if (!user) return false;
         if (user.role === 'super') return true;
-        if (user.role === 'manager' && user.assignedMonth === monthToCheck) return true;
+        if (user.role === 'manager' && user.assignedMonths && user.assignedMonths.includes(monthToCheck)) return true;
         return false;
     };
     const [groceries, setGroceries] = useState<Grocery[]>([]);
@@ -251,7 +251,7 @@ export default function GroceryHistoryPage() {
                 }}
                 onSave={handleSave}
                 members={members}
-                assignedMonth={user?.assignedMonth}
+                assignedMonths={user?.assignedMonths}
                 editData={editingGrocery}
             />
 

@@ -19,7 +19,7 @@ export function generateToken(user: AuthUser): string {
       phoneNumber: user.phoneNumber,
       name: user.name,
       role: user.role,
-      assignedMonth: user.assignedMonth,
+      assignedMonths: user.assignedMonths,
     },
     JWT_SECRET,
     { expiresIn: '7d' }
@@ -52,7 +52,7 @@ export function getUserPermissions(user: AuthUser | null, currentMonth: string):
     canManageData: user.role === 'super' || user.role === 'manager', // Super users and managers can manage data
     canManageCurrentMonth: false, // Will be set based on role and month
     canManageAssignedMonth: false,
-    assignedMonth: user.assignedMonth,
+    assignedMonths: user.assignedMonths,
   };
 
   // Super users can manage any month
@@ -60,10 +60,10 @@ export function getUserPermissions(user: AuthUser | null, currentMonth: string):
     permissions.canManageCurrentMonth = true;
     permissions.canManageAssignedMonth = true;
   } 
-  // Managers can manage their assigned month
-  else if (user.role === 'manager' && user.assignedMonth) {
+  // Managers can manage their assigned months
+  else if (user.role === 'manager' && user.assignedMonths && user.assignedMonths.length > 0) {
     permissions.canManageAssignedMonth = true;
-    if (user.assignedMonth === currentMonth) {
+    if (user.assignedMonths.includes(currentMonth)) {
       permissions.canManageCurrentMonth = true;
     }
   }
@@ -76,7 +76,7 @@ export function canUserManageMonth(user: AuthUser | null, month: string): boolea
   if (!user) return false;
 
   if (user.role === 'super') return true;
-  if (user.role === 'manager' && user.assignedMonth === month) return true;
+  if (user.role === 'manager' && user.assignedMonths && user.assignedMonths.includes(month)) return true;
 
   return false;
 }

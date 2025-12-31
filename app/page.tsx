@@ -18,7 +18,7 @@ export default function Dashboard() {
     const canManageThisMonth = (month: string) => {
         if (!user) return false;
         if (user.role === 'super') return true;
-        if (user.role === 'manager' && user.assignedMonth === month) return true;
+        if (user.role === 'manager' && user.assignedMonths && user.assignedMonths.includes(month)) return true;
         return false;
     };
     const [data, setData] = useState<DashboardData | null>(null);
@@ -329,28 +329,28 @@ export default function Dashboard() {
                 isOpen={isMealModalOpen}
                 onClose={() => setIsMealModalOpen(false)}
                 members={members}
-                assignedMonth={user?.assignedMonth}
+                assignedMonths={user?.assignedMonths}
                 onSave={handleSaveMeal}
             />
             <AddGroceryModal
                 isOpen={isGroceryModalOpen}
                 onClose={() => setIsGroceryModalOpen(false)}
                 members={members}
-                assignedMonth={user?.assignedMonth}
+                assignedMonths={user?.assignedMonths}
                 onSave={handleSaveGrocery}
             />
             <AddExpenseModal
                 isOpen={isExpenseModalOpen}
                 onClose={() => setIsExpenseModalOpen(false)}
                 members={members}
-                assignedMonth={user?.assignedMonth}
+                assignedMonths={user?.assignedMonths}
                 onSave={handleSaveExpense}
             />
             <AddDepositModal
                 isOpen={isDepositModalOpen}
                 onClose={() => setIsDepositModalOpen(false)}
                 members={members}
-                assignedMonth={user?.assignedMonth}
+                assignedMonths={user?.assignedMonths}
                 onSave={handleSaveDeposit}
             />
         </div>

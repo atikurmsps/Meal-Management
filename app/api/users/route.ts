@@ -33,7 +33,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       name: user.name,
       email: user.email,
       role: user.role,
-      assignedMonth: user.assignedMonth,
+      assignedMonths: user.assignedMonths,
       isActive: user.isActive,
       createdAt: user.createdAt?.toISOString() || new Date().toISOString(),
       updatedAt: user.updatedAt?.toISOString() || new Date().toISOString(),
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }
 
     const body = await request.json();
-    let { name, phoneNumber, password, email, role, assignedMonth } = body;
+    let { name, phoneNumber, password, email, role, assignedMonths, assignedMonth } = body; // Support both old and new field names for migration
 
     // Trim all string fields to remove whitespace
     name = typeof name === 'string' ? name.trim() : name;
@@ -129,12 +129,16 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       );
     }
 
-    // Managers must have an assigned month
-    if (role === 'manager' && !assignedMonth) {
-      return NextResponse.json(
-        { success: false, error: 'Managers must have an assigned month' },
-        { status: 400 }
-      );
+    // Managers must have assigned months
+    if (role === 'manager') {
+      const hasAssignedMonths = (assignedMonths && Array.isArray(assignedMonths) && assignedMonths.length > 0);
+      const hasAssignedMonth = assignedMonth && typeof assignedMonth === 'string' && assignedMonth.trim() !== '';
+      if (!hasAssignedMonths && !hasAssignedMonth) {
+        return NextResponse.json(
+          { success: false, error: 'Managers must have at least one assigned month' },
+          { status: 400 }
+        );
+      }
     }
 
     // Hash password
@@ -159,7 +163,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       // Continue even if cleanup fails
     }
 
-    // Try to drop old conflicting index if it exists
+    // Try to drop old conflicting indexes if they exist
     try {
       const indexes = await User.collection.getIndexes();
       console.log('Current indexes:', Object.keys(indexes));
@@ -175,10 +179,22 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
         }
       }
       
-      // Also try to drop any index with 'phone' in the name
+      // Drop assignedMonth_1 index if it exists (old index from previous schema)
+      if (indexes.assignedMonth_1) {
+        console.log('Found old assignedMonth_1 index, attempting to drop it...');
+        try {
+          await User.collection.dropIndex('assignedMonth_1');
+          console.log('Successfully dropped old assignedMonth_1 index.');
+        } catch (dropError: any) {
+          console.log('Could not drop assignedMonth_1 index (may not exist or may be in use):', dropError.message);
+        }
+      }
+      
+      // Also try to drop any index with 'phone' or 'assignedMonth' in the name (but not assignedMonths)
       for (const indexName of Object.keys(indexes)) {
-        if (indexName.includes('phone') && indexName !== 'phoneNumber_1') {
-          console.log(`Found index ${indexName}, attempting to drop it...`);
+        if ((indexName.includes('phone') && indexName !== 'phoneNumber_1') || 
+            (indexName.includes('assignedMonth') && !indexName.includes('assignedMonths'))) {
+          console.log(`Found old index ${indexName}, attempting to drop it...`);
           try {
             await User.collection.dropIndex(indexName);
             console.log(`Successfully dropped index ${indexName}.`);
@@ -205,12 +221,45 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       userData.email = email.trim();
     }
 
-    // Only set assignedMonth if role is manager and it's provided
-    if (role === 'manager' && assignedMonth) {
-      userData.assignedMonth = assignedMonth;
-    } else if (role !== 'manager') {
+    // Only set assignedMonths if role is manager and it's provided
+    // Support migration: if assignedMonth (old) is provided, convert to array
+    if (role === 'manager') {
+      if (assignedMonths && Array.isArray(assignedMonths) && assignedMonths.length > 0) {
+        userData.assignedMonths = assignedMonths;
+      } else if (assignedMonth && typeof assignedMonth === 'string' && assignedMonth.trim() !== '') {
+        // Legacy support: convert single month to array
+        userData.assignedMonths = [assignedMonth.trim()];
+      } else {
+        // This should not happen due to validation above, but fail gracefully
+        return NextResponse.json(
+          { success: false, error: 'Managers must have at least one assigned month' },
+          { status: 400 }
+        );
+      }
+    } else {
       // Explicitly set to undefined for non-managers to avoid validation issues
-      userData.assignedMonth = undefined;
+      userData.assignedMonths = undefined;
+    }
+
+    // Final validation before creation
+    if (role === 'manager') {
+      if (!userData.assignedMonths || !Array.isArray(userData.assignedMonths) || userData.assignedMonths.length === 0) {
+        return NextResponse.json(
+          { success: false, error: 'Managers must have at least one assigned month' },
+          { status: 400 }
+        );
+      }
+      // Ensure assignedMonths is an array of non-empty strings
+      userData.assignedMonths = userData.assignedMonths.filter((m: string) => m && typeof m === 'string' && m.trim() !== '');
+      if (userData.assignedMonths.length === 0) {
+        return NextResponse.json(
+          { success: false, error: 'Managers must have at least one valid assigned month' },
+          { status: 400 }
+        );
+      }
+    } else {
+      // Explicitly remove assignedMonths for non-managers
+      delete userData.assignedMonths;
     }
 
     console.log('Creating user with data:', { ...userData, password: '[HIDDEN]' });
@@ -220,8 +269,35 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       user = await User.create(userData);
       console.log('User created successfully:', user._id);
     } catch (createError: any) {
+      // Handle validation errors for assignedMonth (old field name)
+      if (createError.message?.includes('assignedMonth') && !createError.message?.includes('assignedMonths')) {
+        console.log('Validation error for old assignedMonth field detected. This might be due to cached schema.');
+        console.log('Error details:', createError.errors);
+        
+        // Try to drop the old index and retry
+        try {
+          const indexes = await User.collection.getIndexes();
+          if (indexes.assignedMonth_1) {
+            console.log('Dropping old assignedMonth_1 index...');
+            await User.collection.dropIndex('assignedMonth_1');
+            console.log('Successfully dropped assignedMonth_1 index. Retrying user creation...');
+            // Retry creating the user
+            user = await User.create(userData);
+            console.log('User created successfully after dropping old index:', user._id);
+          } else {
+            throw createError; // Re-throw if we can't fix it
+          }
+        } catch (retryError: any) {
+          console.error('Retry after dropping old index failed:', retryError);
+          // Return a more helpful error message
+          return NextResponse.json(
+            { success: false, error: 'Managers must have at least one assigned month. Please ensure assignedMonths array is provided.' },
+            { status: 400 }
+          );
+        }
+      }
       // Handle duplicate key errors more gracefully
-      if (createError.code === 11000 || createError.message?.includes('duplicate key')) {
+      else if (createError.code === 11000 || createError.message?.includes('duplicate key')) {
         console.log('Duplicate key error detected. Error details:', {
           code: createError.code,
           keyPattern: createError.keyPattern,
@@ -260,7 +336,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       name: user.name,
       email: user.email,
       role: user.role,
-      assignedMonth: user.assignedMonth,
+      assignedMonths: user.assignedMonths,
       isActive: user.isActive,
       createdAt: user.createdAt.toISOString(),
       updatedAt: user.updatedAt.toISOString(),
@@ -316,7 +392,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiRespons
     }
 
     const body: UpdateUserRoleRequest = await request.json();
-    const { userId, role, assignedMonth, password, isActive, phoneNumber, name } = body;
+    const { userId, role, assignedMonths, assignedMonth, password, isActive, phoneNumber, name } = body; // Support migration
 
     if (!userId) {
       return NextResponse.json(
@@ -325,13 +401,23 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiRespons
       );
     }
 
-    // Get user - only select needed fields for efficiency
-    const user = await User.findById(userId).select('_id phoneNumber name role assignedMonth isActive');
+    // Get user - fetch full document since we'll be saving it
+    const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json(
         { success: false, error: 'User not found' },
         { status: 404 }
       );
+    }
+
+    // Clean up any legacy assignedMonth field if it exists
+    if ((user as any).assignedMonth && !user.assignedMonths) {
+      user.assignedMonths = [(user as any).assignedMonth];
+    }
+    // Remove the legacy field using unset operator approach
+    if ((user as any).assignedMonth) {
+      (user as any).set('assignedMonth', undefined, { strict: false });
+      (user as any).unset('assignedMonth');
     }
 
     // Update role if provided
@@ -343,12 +429,21 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiRespons
         );
       }
 
-      // Managers must have an assigned month
-      if (role === 'manager' && !assignedMonth) {
-        return NextResponse.json(
-          { success: false, error: 'Managers must have an assigned month' },
-          { status: 400 }
-        );
+      // Managers must have at least one assigned month
+      let monthsToAssign = assignedMonths || (assignedMonth ? [assignedMonth] : undefined); // Support migration
+      
+      // If changing TO manager role without providing months, use existing months if user was already a manager
+      if (role === 'manager' && (!monthsToAssign || !Array.isArray(monthsToAssign) || monthsToAssign.length === 0)) {
+        if (user.role === 'manager' && user.assignedMonths && Array.isArray(user.assignedMonths) && user.assignedMonths.length > 0) {
+          // User is already a manager, preserve existing months
+          monthsToAssign = user.assignedMonths;
+        } else {
+          // New manager assignment requires months
+          return NextResponse.json(
+            { success: false, error: 'Managers must have at least one assigned month' },
+            { status: 400 }
+          );
+        }
       }
 
       // Prevent changing the last super user's role
@@ -364,15 +459,36 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiRespons
 
       user.role = role;
       if (role === 'manager') {
-        user.assignedMonth = assignedMonth;
+        user.assignedMonths = monthsToAssign || [];
       } else {
-        user.assignedMonth = undefined;
+        // Not a manager, clear assignedMonths
+        user.assignedMonths = undefined;
       }
     }
 
-    // Update assigned month if role is manager and assignedMonth is provided
-    if (user.role === 'manager' && assignedMonth !== undefined) {
-      user.assignedMonth = assignedMonth;
+    // Update assigned months if role is manager and assignedMonths is provided (and role wasn't changed)
+    if (user.role === 'manager' && role === undefined && assignedMonths !== undefined) {
+      if (Array.isArray(assignedMonths) && assignedMonths.length > 0) {
+        user.assignedMonths = assignedMonths;
+      } else if (assignedMonth) {
+        // Legacy support: convert single month to array
+        user.assignedMonths = [assignedMonth];
+      } else {
+        return NextResponse.json(
+          { success: false, error: 'Managers must have at least one assigned month' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Ensure managers always have assignedMonths (preserve existing if not being updated)
+    if (user.role === 'manager' && (!user.assignedMonths || !Array.isArray(user.assignedMonths) || user.assignedMonths.length === 0)) {
+      // This should not happen, but if it does, try to preserve from existing document
+      // If we're here, something went wrong - fail validation
+      return NextResponse.json(
+        { success: false, error: 'Managers must have at least one assigned month' },
+        { status: 400 }
+      );
     }
 
     // Update password if provided
@@ -391,6 +507,20 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiRespons
       user.name = name.trim();
     }
 
+    // Update phone number if provided
+    if (phoneNumber !== undefined && phoneNumber.trim() !== '') {
+      const trimmedPhone = phoneNumber.trim();
+      // Check for duplicate phone number (excluding current user)
+      const existingUser = await User.findOne({ phoneNumber: trimmedPhone, _id: { $ne: userId } });
+      if (existingUser) {
+        return NextResponse.json(
+          { success: false, error: 'Phone number already exists' },
+          { status: 409 }
+        );
+      }
+      user.phoneNumber = trimmedPhone;
+    }
+
     // Update isActive if provided
     if (isActive !== undefined) {
       // Prevent deactivating the last super user
@@ -406,18 +536,83 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiRespons
       user.isActive = isActive;
     }
 
-    await user.save();
+    // Ensure assignedMonths is set for managers before saving
+    if (user.role === 'manager' && (!user.assignedMonths || !Array.isArray(user.assignedMonths) || user.assignedMonths.length === 0)) {
+      return NextResponse.json(
+        { success: false, error: 'Managers must have at least one assigned month' },
+        { status: 400 }
+      );
+    }
+
+    // Use findOneAndUpdate with $unset to properly remove legacy field from database
+    const finalRole = role !== undefined ? role : user.role;
+    const updateQuery: any = {};
+    const unsetFields: any = {};
+    
+    if (role !== undefined) updateQuery.role = role;
+    
+    // Handle assignedMonths - always include it for managers
+    // Always unset legacy assignedMonth field
+    unsetFields.assignedMonth = '';
+    
+    if (finalRole === 'manager') {
+      // For managers, always include assignedMonths in the update
+      // Priority: use user.assignedMonths (set above), then assignedMonths from request, then existing value
+      if (user.assignedMonths && Array.isArray(user.assignedMonths) && user.assignedMonths.length > 0) {
+        updateQuery.assignedMonths = user.assignedMonths;
+      } else if (assignedMonths !== undefined && Array.isArray(assignedMonths) && assignedMonths.length > 0) {
+        updateQuery.assignedMonths = assignedMonths;
+      } else {
+        // Should not happen due to validation above, but include empty array as fallback
+        updateQuery.assignedMonths = [];
+      }
+    } else if (role !== undefined) {
+      // Role is being changed to non-manager, clear assignedMonths
+      updateQuery.assignedMonths = undefined;
+    }
+    // If role is not manager and not being changed, don't include assignedMonths in update
+    
+    if (password !== undefined && password.trim() !== '') {
+      updateQuery.password = user.password;
+    }
+    if (name !== undefined && name.trim() !== '') {
+      updateQuery.name = user.name;
+    }
+    if (phoneNumber !== undefined && phoneNumber.trim() !== '') {
+      updateQuery.phoneNumber = user.phoneNumber;
+    }
+    if (isActive !== undefined) {
+      updateQuery.isActive = user.isActive;
+    }
+
+    const updateObj: any = { $set: updateQuery };
+    if (Object.keys(unsetFields).length > 0) {
+      updateObj.$unset = unsetFields;
+    }
+
+    const updatedUserDoc = await User.findByIdAndUpdate(
+      userId,
+      updateObj,
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedUserDoc) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      );
+    }
 
     const updatedUser: UserType = {
-      _id: user._id.toString(),
-      phoneNumber: user.phoneNumber,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      assignedMonth: user.assignedMonth,
-      isActive: user.isActive,
-      createdAt: user.createdAt.toISOString(),
-      updatedAt: user.updatedAt.toISOString(),
+      _id: updatedUserDoc._id.toString(),
+      phoneNumber: updatedUserDoc.phoneNumber,
+      name: updatedUserDoc.name,
+      email: updatedUserDoc.email,
+      role: updatedUserDoc.role,
+      assignedMonths: updatedUserDoc.assignedMonths,
+      isActive: updatedUserDoc.isActive,
+      createdAt: updatedUserDoc.createdAt.toISOString(),
+      updatedAt: updatedUserDoc.updatedAt.toISOString(),
     };
 
     return NextResponse.json({
