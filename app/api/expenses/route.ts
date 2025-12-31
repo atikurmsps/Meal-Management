@@ -20,7 +20,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
         const expenses = await Expense.find(query)
             .populate('paidBy', 'name')
             .populate('splitAmong', 'name')
-            .sort({ date: -1 });
+            .select('-__v')
+            .sort({ date: -1 })
+            .lean();
         return NextResponse.json({ success: true, data: expenses });
     } catch (error) {
         return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'An error occurred' }, { status: 400 });

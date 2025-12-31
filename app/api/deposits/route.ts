@@ -17,7 +17,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
         if (month) {
             query.month = month;
         }
-        const deposits = await Deposit.find(query).populate('memberId', 'name').sort({ date: -1 });
+        const deposits = await Deposit.find(query).populate('memberId', 'name').select('-__v').sort({ date: -1 }).lean();
         return NextResponse.json({ success: true, data: deposits });
     } catch (error) {
         return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'An error occurred' }, { status: 400 });

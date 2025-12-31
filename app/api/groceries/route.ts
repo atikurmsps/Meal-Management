@@ -20,7 +20,9 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
         const groceries = await Grocery.find(query)
             .populate('doneBy', 'name')
             .populate('addedBy', 'name')
-            .sort({ date: -1 });
+            .select('-__v')
+            .sort({ date: -1 })
+            .lean();
         return NextResponse.json({ success: true, data: groceries });
     } catch (error) {
         return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'An error occurred' }, { status: 400 });

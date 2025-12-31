@@ -23,21 +23,33 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
         // Ensure month is always a string
         const currentMonth: string = month as string;
 
-        // 1. Get all active users (users are members)
-        const members = await User.find({ isActive: true });
+        // 1. Get all active users (users are members) - only select needed fields
+        const members = await User.find({ isActive: true }).select('_id name').lean();
 
-        // 2. Get totals
-        const groceries = await Grocery.find({ month });
-        const totalGrocery = groceries.reduce((sum: number, exp: any) => sum + exp.amount, 0);
+        // 2. Get totals using aggregation for better performance
+        const [groceryResult, mealResult, depositResult, expenseResult] = await Promise.all([
+            Grocery.aggregate([
+                { $match: { month } },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ]),
+            Meal.aggregate([
+                { $match: { month } },
+                { $group: { _id: null, total: { $sum: '$count' } } }
+            ]),
+            Deposit.aggregate([
+                { $match: { month } },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ]),
+            Expense.aggregate([
+                { $match: { month } },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ])
+        ]);
 
-        const meals = await Meal.find({ month });
-        const totalMeals = meals.reduce((sum: number, meal: any) => sum + meal.count, 0);
-
-        const deposits = await Deposit.find({ month });
-        const totalDeposit = deposits.reduce((sum: number, dep: any) => sum + dep.amount, 0);
-
-        const expenses = await Expense.find({ month });
-        const totalExpense = expenses.reduce((sum: number, exp: any) => sum + exp.amount, 0);
+        const totalGrocery = groceryResult[0]?.total || 0;
+        const totalMeals = mealResult[0]?.total || 0;
+        const totalDeposit = depositResult[0]?.total || 0;
+        const totalExpense = expenseResult[0]?.total || 0;
 
         // 3. Calculate Meal Rate
         const mealRate = totalMeals > 0 ? totalGrocery / totalMeals : 0;
@@ -45,27 +57,40 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
         // Calculate Total Balance (Deposit - Grocery)
         const totalBalance = totalDeposit - totalGrocery;
 
-        // 4. Calculate Member Stats
-        const memberStats: MemberStats[] = members.map((member: any) => {
-            const memberMeals = meals
-                .filter((m: any) => m.memberId.toString() === member._id.toString())
-                .reduce((sum: number, m: any) => sum + m.count, 0);
+        // 4. Calculate Member Stats using aggregation for better performance
+        const [memberMealsData, memberDepositsData, memberExpensesData] = await Promise.all([
+            Meal.aggregate([
+                { $match: { month } },
+                { $group: { _id: '$memberId', total: { $sum: '$count' } } }
+            ]),
+            Deposit.aggregate([
+                { $match: { month } },
+                { $group: { _id: '$memberId', total: { $sum: '$amount' } } }
+            ]),
+            Expense.find({ month }).select('amount paidBy splitAmong').lean()
+        ]);
 
-            const memberDeposit = deposits
-                .filter((d: any) => d.memberId.toString() === member._id.toString())
-                .reduce((sum: number, d: any) => sum + d.amount, 0);
+        // Create maps for O(1) lookup
+        const mealsMap = new Map(memberMealsData.map((m: any) => [m._id.toString(), m.total]));
+        const depositsMap = new Map(memberDepositsData.map((d: any) => [d._id.toString(), d.total]));
+
+        // Calculate member stats
+        const memberStats: MemberStats[] = members.map((member: any) => {
+            const memberIdStr = member._id.toString();
+            const memberMeals = mealsMap.get(memberIdStr) || 0;
+            const memberDeposit = depositsMap.get(memberIdStr) || 0;
 
             // Calculate meal bill only (no expenses)
             const mealBill = memberMeals * mealRate;
 
             // Calculate member's share of expenses (only expenses they're included in)
-            const memberExpenseShare = expenses
-                .filter((exp: any) => exp.splitAmong && exp.splitAmong.some((m: any) => m.toString() === member._id.toString()))
+            const memberExpenseShare = memberExpensesData
+                .filter((exp: any) => exp.splitAmong && exp.splitAmong.some((m: any) => m.toString() === memberIdStr))
                 .reduce((sum: number, exp: any) => sum + (exp.amount / exp.splitAmong.length), 0);
 
             // Calculate how much member paid for expenses
-            const memberExpensePaid = expenses
-                .filter((exp: any) => exp.paidBy && exp.paidBy.toString() === member._id.toString())
+            const memberExpensePaid = memberExpensesData
+                .filter((exp: any) => exp.paidBy && exp.paidBy.toString() === memberIdStr)
                 .reduce((sum: number, exp: any) => sum + exp.amount, 0);
 
             // Expense balance = what they paid - what they owe
@@ -78,7 +103,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
             const totalBill = mealBill + memberExpenseShare;
 
             return {
-                _id: member._id,
+                _id: member._id.toString(),
                 name: member.name,
                 meals: memberMeals,
                 deposit: memberDeposit,

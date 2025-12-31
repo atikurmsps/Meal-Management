@@ -9,7 +9,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
     await dbConnect();
     try {
         // Return all active users as members
-        const users = await User.find({ isActive: true }).select('-password').sort({ name: 1 });
+        const users = await User.find({ isActive: true }).select('_id name email isActive').sort({ name: 1 }).lean();
         
         // Map to Member-like format for backward compatibility
         const members = users.map(user => ({

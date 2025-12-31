@@ -56,6 +56,12 @@ const UserSchema = new mongoose.Schema<IUser>({
   timestamps: true,
 });
 
+// Indexes for faster queries
+UserSchema.index({ isActive: 1 }); // For filtering active users
+UserSchema.index({ phoneNumber: 1 }); // Already unique, but explicit index helps
+UserSchema.index({ role: 1 }); // For role-based queries
+UserSchema.index({ assignedMonth: 1 }); // For manager month queries
+
 const UserModel = mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
 
 // Clean up any existing users with null/empty phoneNumber on model initialization

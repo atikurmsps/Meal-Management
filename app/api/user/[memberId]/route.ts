@@ -10,50 +10,43 @@ import type { MemberProfileData, MemberExpense, ApiResponse } from '@/types';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ memberId: string }> }): Promise<NextResponse<ApiResponse<MemberProfileData>>> {
     try {
-        console.log('API Route called with URL:', request.url);
-
         await dbConnect();
 
         const resolvedParams = await params;
         const { memberId } = resolvedParams;
-        console.log('API Route - memberId:', memberId);
-        console.log('API Route - memberId:', memberId);
 
         if (!memberId) {
-            console.log('API Route - memberId is falsy');
             return NextResponse.json({ success: false, error: 'Member ID is required' }, { status: 400 });
         }
 
         const { searchParams } = new URL(request.url);
         const month = searchParams.get('month');
-        console.log('Month parameter:', month);
 
         if (!month) {
-            console.log('Month parameter is missing');
             return NextResponse.json({ success: false, error: 'Month is required' }, { status: 400 });
         }
 
-        // Get user/member info (users are members)
-        console.log('Looking up user/member with ID:', memberId);
-        const member = await User.findById(memberId).select('-password');
-        console.log('User/Member found:', !!member, member?.name);
+        // Get user/member info (users are members) - only select needed fields
+        const member = await User.findById(memberId).select('_id name').lean();
 
         if (!member) {
-            console.log('User/Member not found for ID:', memberId);
-            // Let's also check how many users exist
-            const totalUsers = await User.countDocuments({ isActive: true });
-            console.log('Total active users in database:', totalUsers);
             return NextResponse.json({ success: false, error: 'User/Member not found' }, { status: 404 });
         }
 
-        // Get all data for calculations
-        const [meals, groceries, deposits, expenses, allMeals, allGroceries] = await Promise.all([
-            Meal.find({ memberId, month }).sort({ date: -1 }),
-            Grocery.find({ doneBy: memberId, month }).sort({ date: -1 }),
-            Deposit.find({ memberId, month }).sort({ date: -1 }),
-            Expense.find({ month }).populate('paidBy', 'name').populate('splitAmong', 'name'),
-            Meal.find({ month }),
-            Grocery.find({ month })
+        // Get all data for calculations using aggregation and lean for better performance
+        const [meals, groceries, deposits, expenses, mealTotals, groceryTotals] = await Promise.all([
+            Meal.find({ memberId, month }).select('date count').sort({ date: -1 }).lean(),
+            Grocery.find({ doneBy: memberId, month }).select('date amount description note').sort({ date: -1 }).lean(),
+            Deposit.find({ memberId, month }).select('date amount').sort({ date: -1 }).lean(),
+            Expense.find({ month }).populate('paidBy', 'name').populate('splitAmong', 'name').select('-__v').lean(),
+            Meal.aggregate([
+                { $match: { month } },
+                { $group: { _id: null, total: { $sum: '$count' } } }
+            ]),
+            Grocery.aggregate([
+                { $match: { month } },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ])
         ]);
 
         // Calculate totals
@@ -61,9 +54,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         const totalGrocery = groceries.reduce((sum: number, groc: any) => sum + groc.amount, 0);
         const totalMeals = meals.reduce((sum: number, meal: any) => sum + meal.count, 0);
 
-        // Calculate meal rate
-        const allMealsCount = allMeals.reduce((sum: number, meal: any) => sum + meal.count, 0);
-        const allGroceriesAmount = allGroceries.reduce((sum: number, groc: any) => sum + groc.amount, 0);
+        // Calculate meal rate using aggregation results
+        const allMealsCount = mealTotals[0]?.total || 0;
+        const allGroceriesAmount = groceryTotals[0]?.total || 0;
         const mealRate = allMealsCount > 0 ? allGroceriesAmount / allMealsCount : 0;
 
         const totalMealBill = totalMeals * mealRate;
@@ -92,7 +85,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                     ? exp.amount / exp.splitAmong.length
                     : 0;
                 return {
-                    ...exp.toObject(),
+                    ...exp,
                     memberPaid: paid,
                     memberShare: share,
                     memberBalance: paid - share
@@ -104,7 +97,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             success: true,
             data: {
                 member: {
-                    _id: member._id,
+                    _id: member._id.toString(),
                     name: member.name
                 },
                 summary: {

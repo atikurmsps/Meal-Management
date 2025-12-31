@@ -25,7 +25,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
       );
     }
 
-    const users = await User.find({}).select('-password').sort({ createdAt: -1 });
+    const users = await User.find({}).select('-password -__v').sort({ createdAt: -1 }).lean();
 
     const userData: UserType[] = users.map(user => ({
       _id: user._id.toString(),
@@ -54,24 +54,18 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
 
 export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse<UserType>>> {
   try {
-    console.log('Starting user creation...');
     await dbConnect();
-    console.log('Database connected');
 
     const currentUser = await getCurrentUser();
     if (!currentUser) {
-      console.log('No current user found');
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    console.log('Current user:', currentUser.role);
-
     // Only super users can create new users
     if (currentUser.role !== 'super') {
-      console.log('User is not super admin');
       return NextResponse.json(
         { success: false, error: 'Forbidden' },
         { status: 403 }
@@ -79,7 +73,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }
 
     const body = await request.json();
-    console.log('Request body:', { ...body, password: '[HIDDEN]' });
     let { name, phoneNumber, password, email, role, assignedMonth } = body;
 
     // Trim all string fields to remove whitespace
@@ -130,7 +123,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     console.log('Phone number is unique, proceeding with user creation');
 
     if (!['general', 'manager', 'super'].includes(role)) {
-      console.log('Invalid role:', role);
       return NextResponse.json(
         { success: false, error: 'Invalid role' },
         { status: 400 }
@@ -139,17 +131,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 
     // Managers must have an assigned month
     if (role === 'manager' && !assignedMonth) {
-      console.log('Manager without assigned month');
       return NextResponse.json(
         { success: false, error: 'Managers must have an assigned month' },
         { status: 400 }
       );
     }
 
-    console.log('Hashing password...');
     // Hash password
     const hashedPassword = await hashPassword(password);
-    console.log('Password hashed successfully');
 
     // Clean up any users with null/empty phoneNumber before creating new user
     // This prevents the duplicate key error on the sparse index
@@ -277,7 +266,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       updatedAt: user.updatedAt.toISOString(),
     };
 
-    console.log('Returning success response');
     return NextResponse.json({
       success: true,
       data: newUser,

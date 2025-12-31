@@ -30,6 +30,14 @@ const GrocerySchema = new mongoose.Schema({
         type: String, // YYYY-MM format
         required: true,
     },
+}, {
+    timestamps: true,
 });
+
+// Indexes for faster queries
+GrocerySchema.index({ month: 1 }); // Most common query
+GrocerySchema.index({ doneBy: 1, month: 1 }); // Compound index for doneBy queries
+GrocerySchema.index({ date: -1 }); // For sorting by date
+GrocerySchema.index({ month: 1, date: -1 }); // Compound for month + date sorting
 
 export default mongoose.models.Grocery || mongoose.model('Grocery', GrocerySchema);
