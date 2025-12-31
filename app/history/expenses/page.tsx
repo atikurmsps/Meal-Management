@@ -5,6 +5,7 @@ import { Plus, Edit2, Trash2 } from 'lucide-react';
 import AddExpenseModal from '@/components/AddExpenseModal';
 import ConfirmModal from '@/components/ConfirmModal';
 import { useAuth } from '@/components/AuthProvider';
+import { formatDate } from '@/lib/dateUtils';
 import type { Expense, Member, ApiResponse } from '@/types';
 
 export default function ExpenseHistoryPage() {
@@ -131,12 +132,12 @@ export default function ExpenseHistoryPage() {
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary">Expense History</h1>
                 <div className="flex items-center gap-3 w-full sm:w-auto">
                     {month && canManageThisMonth(month) && (
-                        <button
-                            onClick={openAddModal}
+                    <button
+                        onClick={openAddModal}
                             className="flex items-center gap-2 rounded-md bg-primary px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium text-primary-foreground hover:bg-primary/90 w-full sm:w-auto justify-center"
-                        >
-                            <Plus className="h-4 w-4" /> Add New
-                        </button>
+                    >
+                        <Plus className="h-4 w-4" /> Add New
+                    </button>
                     )}
                 </div>
             </div>
@@ -267,7 +268,7 @@ export default function ExpenseHistoryPage() {
                                     <div className="flex-1">
                                         <p className="font-medium text-foreground">{expense.description}</p>
                                         <p className="text-sm text-muted-foreground mt-1">
-                                            {new Date(expense.date).toLocaleDateString()} • Paid by: {typeof expense.paidBy === 'object' && expense.paidBy !== null ? (expense.paidBy as any).name : 'N/A'}
+                                            {formatDate(expense.date)} • Paid by: {typeof expense.paidBy === 'object' && expense.paidBy !== null ? (expense.paidBy as any).name : 'N/A'}
                                         </p>
                                         {expense.splitAmong && expense.splitAmong.length > 0 && (
                                             <div className="flex flex-wrap gap-1 mt-2">
@@ -336,7 +337,7 @@ export default function ExpenseHistoryPage() {
                             ) : (
                                 expenses.map((expense) => (
                                     <tr key={expense._id} className="hover:bg-muted/10">
-                                        <td className="px-4 lg:px-6 py-4">{new Date(expense.date).toLocaleDateString()}</td>
+                                        <td className="px-4 lg:px-6 py-4">{formatDate(expense.date)}</td>
                                         <td className="px-4 lg:px-6 py-4 font-medium">{expense.description}</td>
                                         <td className="px-4 lg:px-6 py-4">{typeof expense.paidBy === 'object' && expense.paidBy !== null ? (expense.paidBy as any).name : 'N/A'}</td>
                                         <td className="px-4 lg:px-6 py-4 text-sm">
@@ -361,22 +362,22 @@ export default function ExpenseHistoryPage() {
                                         </td>
                                         <td className="px-4 lg:px-6 py-4">
                                             {canManageThisMonth(month) && (
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <button
-                                                        onClick={() => handleEdit(expense)}
-                                                        className="rounded p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
-                                                        title="Edit"
-                                                    >
-                                                        <Edit2 className="h-4 w-4" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => setDeleteConfirm({ isOpen: true, id: expense._id })}
-                                                        className="rounded p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
-                                                        title="Delete"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </button>
-                                                </div>
+                                            <div className="flex items-center justify-center gap-2">
+                                                <button
+                                                    onClick={() => handleEdit(expense)}
+                                                    className="rounded p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+                                                    title="Edit"
+                                                >
+                                                    <Edit2 className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => setDeleteConfirm({ isOpen: true, id: expense._id })}
+                                                    className="rounded p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                                                    title="Delete"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </button>
+                                            </div>
                                             )}
                                         </td>
                                     </tr>

@@ -16,7 +16,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
         // Month is optional - if not provided, return all groceries
         if (month) {
             query.month = month;
-        }
+    }
         const groceries = await Grocery.find(query)
             .populate('doneBy', 'name')
             .populate('addedBy', 'name')

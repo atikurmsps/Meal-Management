@@ -5,6 +5,7 @@ import { Plus, Trash2 } from 'lucide-react';
 import AddMealModal from '@/components/AddMealModal';
 import ConfirmModal from '@/components/ConfirmModal';
 import { useAuth } from '@/components/AuthProvider';
+import { formatDate } from '@/lib/dateUtils';
 import type { Meal, Member, ApiResponse } from '@/types';
 
 export default function MealHistoryPage() {
@@ -146,61 +147,28 @@ export default function MealHistoryPage() {
             </div>
 
             <div className="rounded-lg border border-border bg-card shadow-sm overflow-hidden">
-                {/* Mobile Card View */}
-                <div className="block sm:hidden divide-y divide-border">
-                    {loading ? (
-                        <div className="p-4 text-center">Loading...</div>
-                    ) : meals.length === 0 ? (
-                        <div className="p-4 text-center text-muted-foreground">No meals found for this month.</div>
-                    ) : (
-                        meals.map((meal) => (
-                            <div key={meal._id} className="p-4 space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="font-medium text-foreground">{typeof meal.memberId === 'object' && meal.memberId !== null ? (meal.memberId as any).name : 'Unknown'}</p>
-                                        <p className="text-sm text-muted-foreground">{new Date(meal.date).toLocaleDateString()}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="font-medium text-foreground">Count: {meal.count}</p>
-                                        {canManageThisMonth(month) && (
-                                            <button
-                                                onClick={() => setDeleteConfirm({ isOpen: true, id: meal._id })}
-                                                className="mt-2 rounded p-1 text-red-600 hover:bg-red-50"
-                                                title="Delete"
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        ))
-                    )}
-                </div>
-
-                {/* Desktop Table View */}
-                <div className="hidden sm:block overflow-x-auto">
+                <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
                         <thead className="bg-muted/50 text-muted-foreground">
                             <tr>
-                                <th className="px-4 lg:px-6 py-3 font-medium">Date</th>
-                                <th className="px-4 lg:px-6 py-3 font-medium">Member</th>
-                                <th className="px-4 lg:px-6 py-3 font-medium text-right">Count</th>
-                                <th className="px-4 lg:px-6 py-3 font-medium text-center">Actions</th>
+                                <th className="px-3 sm:px-4 lg:px-6 py-3 font-medium text-xs sm:text-sm">Date</th>
+                                <th className="px-3 sm:px-4 lg:px-6 py-3 font-medium text-xs sm:text-sm">Member</th>
+                                <th className="px-3 sm:px-4 lg:px-6 py-3 font-medium text-right text-xs sm:text-sm">Count</th>
+                                <th className="px-3 sm:px-4 lg:px-6 py-3 font-medium text-center text-xs sm:text-sm">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
                             {loading ? (
-                                <tr><td colSpan={4} className="p-4 text-center">Loading...</td></tr>
+                                <tr><td colSpan={4} className="p-4 text-center text-sm">Loading...</td></tr>
                             ) : meals.length === 0 ? (
-                                <tr><td colSpan={4} className="p-4 text-center text-muted-foreground">No meals found for this month.</td></tr>
+                                <tr><td colSpan={4} className="p-4 text-center text-muted-foreground text-sm">No meals found for this month.</td></tr>
                             ) : (
                                 meals.map((meal) => (
                                     <tr key={meal._id} className="hover:bg-muted/10">
-                                        <td className="px-4 lg:px-6 py-4">{new Date(meal.date).toLocaleDateString()}</td>
-                                        <td className="px-4 lg:px-6 py-4 font-medium">{typeof meal.memberId === 'object' && meal.memberId !== null ? (meal.memberId as any).name : 'Unknown'}</td>
-                                        <td className="px-4 lg:px-6 py-4 text-right font-medium">{meal.count}</td>
-                                        <td className="px-4 lg:px-6 py-4">
+                                        <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-xs sm:text-sm">{formatDate(meal.date)}</td>
+                                        <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 font-medium text-xs sm:text-sm">{typeof meal.memberId === 'object' && meal.memberId !== null ? (meal.memberId as any).name : 'Unknown'}</td>
+                                        <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-right font-medium text-xs sm:text-sm">{meal.count.toFixed(1)}</td>
+                                        <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
                                             {canManageThisMonth(month) && (
                                                 <div className="flex items-center justify-center gap-2">
                                                     <button
@@ -208,7 +176,7 @@ export default function MealHistoryPage() {
                                                         className="rounded p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
                                                         title="Delete"
                                                     >
-                                                        <Trash2 className="h-4 w-4" />
+                                                        <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                                     </button>
                                                 </div>
                                             )}

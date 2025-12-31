@@ -42,7 +42,7 @@ export default function RootLayout({
       <body className="bg-background text-foreground antialiased font-sans">
         <AuthProvider>
           <Layout>
-            {children}
+          {children}
           </Layout>
         </AuthProvider>
       </body>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { formatDate } from '@/lib/dateUtils';
 import type { Meal } from '@/types';
 
 interface EditMealModalProps {
@@ -48,7 +49,7 @@ export default function EditMealModal({ isOpen, onClose, onSave, editData }: Edi
                         <label className="block text-sm font-medium text-muted-foreground">Date</label>
                         <input
                             type="text"
-                            value={editData?.date ? new Date(editData.date).toLocaleDateString() : ''}
+                            value={editData?.date ? formatDate(editData.date) : ''}
                             disabled
                             className="mt-1 block w-full rounded-md border border-input bg-muted px-3 py-2 text-muted-foreground cursor-not-allowed"
                         />

@@ -5,6 +5,7 @@ import { Plus, Edit2, Trash2 } from 'lucide-react';
 import AddGroceryModal from '@/components/AddGroceryModal';
 import ConfirmModal from '@/components/ConfirmModal';
 import { useAuth } from '@/components/AuthProvider';
+import { formatDate } from '@/lib/dateUtils';
 import type { Grocery, Member, ApiResponse } from '@/types';
 
 export default function GroceryHistoryPage() {
@@ -155,7 +156,7 @@ export default function GroceryHistoryPage() {
                                     <div className="flex-1">
                                         <p className="font-medium text-foreground">{grocery.description}</p>
                                         <p className="text-sm text-muted-foreground mt-1">
-                                            {new Date(grocery.date).toLocaleDateString()} • {typeof grocery.doneBy === 'object' && grocery.doneBy !== null ? (grocery.doneBy as any).name : '-'}
+                                            {formatDate(grocery.date)} • {typeof grocery.doneBy === 'object' && grocery.doneBy !== null ? (grocery.doneBy as any).name : '-'}
                                         </p>
                                         {grocery.note && (
                                             <p className="text-sm text-muted-foreground mt-1">{grocery.note}</p>
@@ -209,7 +210,7 @@ export default function GroceryHistoryPage() {
                             ) : (
                                 groceries.map((grocery) => (
                                     <tr key={grocery._id} className="hover:bg-muted/10">
-                                        <td className="px-4 lg:px-6 py-4">{new Date(grocery.date).toLocaleDateString()}</td>
+                                        <td className="px-4 lg:px-6 py-4">{formatDate(grocery.date)}</td>
                                         <td className="px-4 lg:px-6 py-4 font-medium">{grocery.description}</td>
                                         <td className="px-4 lg:px-6 py-4">{typeof grocery.doneBy === 'object' && grocery.doneBy !== null ? (grocery.doneBy as any).name : '-'}</td>
                                         <td className="px-4 lg:px-6 py-4 text-muted-foreground">{grocery.note}</td>

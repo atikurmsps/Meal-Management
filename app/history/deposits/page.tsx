@@ -5,6 +5,7 @@ import { Plus, Edit2, Trash2 } from 'lucide-react';
 import AddDepositModal from '@/components/AddDepositModal';
 import ConfirmModal from '@/components/ConfirmModal';
 import { useAuth } from '@/components/AuthProvider';
+import { formatDate } from '@/lib/dateUtils';
 import type { Deposit, Member, ApiResponse } from '@/types';
 
 export default function DepositHistoryPage() {
@@ -154,7 +155,7 @@ export default function DepositHistoryPage() {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="font-medium text-foreground">{typeof deposit.memberId === 'object' && deposit.memberId !== null ? (deposit.memberId as any).name : 'N/A'}</p>
-                                        <p className="text-sm text-muted-foreground">{new Date(deposit.date).toLocaleDateString()}</p>
+                                        <p className="text-sm text-muted-foreground">{formatDate(deposit.date)}</p>
                                     </div>
                                     <div className="text-right">
                                         <p className="font-medium text-foreground">৳{deposit.amount.toFixed(0)}</p>
@@ -202,7 +203,7 @@ export default function DepositHistoryPage() {
                             ) : (
                                 deposits.map((deposit) => (
                                     <tr key={deposit._id} className="hover:bg-muted/10">
-                                        <td className="px-4 lg:px-6 py-4">{new Date(deposit.date).toLocaleDateString()}</td>
+                                        <td className="px-4 lg:px-6 py-4">{formatDate(deposit.date)}</td>
                                         <td className="px-4 lg:px-6 py-4 font-medium">{typeof deposit.memberId === 'object' && deposit.memberId !== null ? (deposit.memberId as any).name : 'N/A'}</td>
                                         <td className="px-4 lg:px-6 py-4 text-right font-medium">৳{deposit.amount.toFixed(0)}</td>
                                         <td className="px-4 lg:px-6 py-4">

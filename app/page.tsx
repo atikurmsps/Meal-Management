@@ -8,6 +8,7 @@ import AddGroceryModal from '@/components/AddGroceryModal';
 import AddExpenseModal from '@/components/AddExpenseModal';
 import AddDepositModal from '@/components/AddDepositModal';
 import { useAuth } from '@/components/AuthProvider';
+import { formatMonth } from '@/lib/dateUtils';
 import type { DashboardData, Member, ApiResponse } from '@/types';
 
 export default function Dashboard() {
@@ -120,10 +121,10 @@ export default function Dashboard() {
     return (
         <div className="space-y-4 sm:space-y-6 lg:space-y-8">
             {/* Header Section */}
-            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-4 sm:gap-6 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
-                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-foreground tracking-tight">Dashboard</h1>
-                    <p className="text-muted-foreground text-sm sm:text-base lg:text-lg">Overview for {data.month}</p>
+                    <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold text-foreground tracking-tight">Dashboard</h1>
+                    <p className="text-muted-foreground text-xs sm:text-sm lg:text-base">Overview for {formatMonth(data.month)}</p>
                 </div>
                 {data && canManageThisMonth(data.month) && (
                 <div className="flex flex-wrap gap-2 sm:gap-3">
@@ -164,55 +165,55 @@ export default function Dashboard() {
             </div>
 
             {/* Summary Cards */}
-            <div className="grid gap-4 sm:gap-6 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 <Link href="/history/meals" className="block group">
-                    <div className="card p-4 sm:p-6 h-full group-hover:shadow-lg transition-all duration-200">
+                    <div className="card p-3 sm:p-4 lg:p-6 h-full group-hover:shadow-lg transition-all duration-200">
                         <div className="text-center">
                             <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">Total Meals</p>
-                            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground">{data.totalMeals.toFixed(1)}</p>
+                            <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-foreground">{data.totalMeals.toFixed(1)}</p>
                         </div>
                     </div>
                 </Link>
 
-                <div className="card p-6">
+                <div className="card p-3 sm:p-4 lg:p-6">
                     <div className="text-center">
-                        <p className="text-sm font-medium text-muted-foreground mb-2">Meal Rate</p>
-                        <p className="text-3xl font-bold text-foreground">{data.mealRate.toFixed(2)}</p>
+                        <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">Meal Rate</p>
+                        <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-foreground">৳{data.mealRate.toFixed(2)}</p>
                     </div>
                 </div>
 
                 <Link href="/history/groceries" className="block group">
-                    <div className="card p-6 h-full group-hover:shadow-lg transition-all duration-200">
+                    <div className="card p-3 sm:p-4 lg:p-6 h-full group-hover:shadow-lg transition-all duration-200">
                         <div className="text-center">
-                            <p className="text-sm font-medium text-muted-foreground mb-2">Total Grocery</p>
-                            <p className="text-3xl font-bold text-foreground">{data.totalGrocery.toFixed(0)}</p>
+                            <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">Total Grocery</p>
+                            <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-foreground">৳{data.totalGrocery.toFixed(0)}</p>
                         </div>
                     </div>
                 </Link>
 
                 <Link href="/history/deposits" className="block group">
-                    <div className="card p-6 h-full group-hover:shadow-lg transition-all duration-200">
+                    <div className="card p-3 sm:p-4 lg:p-6 h-full group-hover:shadow-lg transition-all duration-200">
                         <div className="text-center">
-                            <p className="text-sm font-medium text-muted-foreground mb-2">Total Deposit</p>
-                            <p className="text-3xl font-bold text-foreground">{data.totalDeposit.toFixed(0)}</p>
+                            <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">Total Deposit</p>
+                            <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-foreground">৳{data.totalDeposit.toFixed(0)}</p>
                         </div>
                     </div>
                 </Link>
 
-                <div className="card p-6">
+                <div className="card p-3 sm:p-4 lg:p-6">
                     <div className="text-center">
-                        <p className="text-sm font-medium text-muted-foreground mb-2">Meal Balance</p>
-                        <p className={`text-3xl font-bold ${data.totalBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {data.totalBalance >= 0 ? '+' : ''}{data.totalBalance.toFixed(0)}
+                        <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">Meal Balance</p>
+                        <p className={`text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold ${data.totalBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {data.totalBalance >= 0 ? '+' : ''}৳{data.totalBalance.toFixed(0)}
                         </p>
                     </div>
                 </div>
 
                 <Link href="/history/expenses" className="block group">
-                    <div className="card p-6 h-full group-hover:shadow-lg transition-all duration-200">
+                    <div className="card p-3 sm:p-4 lg:p-6 h-full group-hover:shadow-lg transition-all duration-200">
                         <div className="text-center">
-                            <p className="text-sm font-medium text-muted-foreground mb-2">Total Expense</p>
-                            <p className="text-3xl font-bold text-foreground">{data.totalExpense.toFixed(0)}</p>
+                            <p className="text-xs sm:text-sm font-medium text-muted-foreground mb-1 sm:mb-2">Total Expense</p>
+                            <p className="text-lg sm:text-xl lg:text-2xl xl:text-3xl font-bold text-foreground">৳{data.totalExpense.toFixed(0)}</p>
                         </div>
                     </div>
                 </Link>
@@ -234,38 +235,38 @@ export default function Dashboard() {
                         <Link
                             key={member._id}
                             href={`/member/${member._id}?month=${data.month}`}
-                            className="block p-4 hover:bg-muted/20 transition-colors"
+                            className="block p-3 hover:bg-muted/20 transition-colors"
                         >
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                            <div className="flex items-center gap-2 mb-2.5">
+                                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
                                     <span className="text-primary font-semibold text-sm">
                                         {member.name.charAt(0).toUpperCase()}
                                     </span>
                                 </div>
-                                <span className="font-medium text-foreground">{member.name}</span>
+                                <span className="font-medium text-foreground text-sm truncate">{member.name}</span>
                             </div>
-                            <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div className="grid grid-cols-3 gap-2.5">
                                 <div>
-                                    <p className="text-muted-foreground">Meals</p>
-                                    <p className="font-medium">{member.meals.toFixed(1)}</p>
-                                </div>
-                                <div className="text-right">
-                                    <p className="text-muted-foreground">Meal Bill</p>
-                                    <p className="font-medium">৳{member.mealBill.toFixed(0)}</p>
+                                    <p className="text-muted-foreground text-xs mb-1">Meals</p>
+                                    <p className="font-medium text-sm">{member.meals.toFixed(1)}</p>
                                 </div>
                                 <div>
-                                    <p className="text-muted-foreground">Deposit</p>
-                                    <p className="font-medium">৳{member.deposit.toFixed(0)}</p>
+                                    <p className="text-muted-foreground text-xs mb-1">Meal Bill</p>
+                                    <p className="font-medium text-sm">৳{member.mealBill.toFixed(0)}</p>
                                 </div>
-                                <div className="text-right">
-                                    <p className="text-muted-foreground">Meal Balance</p>
-                                    <p className={`font-semibold ${member.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                <div>
+                                    <p className="text-muted-foreground text-xs mb-1">Deposit</p>
+                                    <p className="font-medium text-sm">৳{member.deposit.toFixed(0)}</p>
+                                </div>
+                                <div>
+                                    <p className="text-muted-foreground text-xs mb-1">Meal Bal</p>
+                                    <p className={`font-semibold text-sm ${member.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                         {member.balance >= 0 ? '+' : ''}৳{member.balance.toFixed(0)}
                                     </p>
                                 </div>
                                 <div className="col-span-2">
-                                    <p className="text-muted-foreground">Expense Balance</p>
-                                    <p className={`font-semibold ${member.expenseBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                    <p className="text-muted-foreground text-xs mb-1">Expense Bal</p>
+                                    <p className={`font-semibold text-sm ${member.expenseBalance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                                         {member.expenseBalance >= 0 ? '+' : ''}৳{member.expenseBalance.toFixed(0)}
                                     </p>
                                 </div>
