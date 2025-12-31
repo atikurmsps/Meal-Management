@@ -73,14 +73,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }
 
     const body = await request.json();
-    let { name, phoneNumber, password, email, role, assignedMonths, assignedMonth } = body; // Support both old and new field names for migration
+    let { name, phoneNumber, password, email, role, assignedMonths, assignedMonth } = body;
 
     // Trim all string fields to remove whitespace
     name = typeof name === 'string' ? name.trim() : name;
     phoneNumber = typeof phoneNumber === 'string' ? phoneNumber.trim() : phoneNumber;
 
     if (!name || !phoneNumber || !password || !role) {
-      console.log('Missing required fields');
       return NextResponse.json(
         { success: false, error: 'Name, phone number, password, and role are required' },
         { status: 400 }
@@ -89,7 +88,6 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 
     // Ensure phoneNumber is not empty after trimming
     if (phoneNumber.length === 0) {
-      console.log('Phone number is empty after trimming');
       return NextResponse.json(
         { success: false, error: 'Phone number cannot be empty' },
         { status: 400 }
@@ -99,28 +97,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     // Check if phone number already exists (using trimmed value)
     // The schema has trim: true, so we need to check with trimmed value
     const trimmedPhoneNumber = phoneNumber.trim();
-    console.log('Checking for existing phone number:', trimmedPhoneNumber);
     
     const existingUser = await User.findOne({ phoneNumber: trimmedPhoneNumber });
     if (existingUser) {
-      console.log('Phone number already exists:', {
-        existing: existingUser.phoneNumber,
-        existingId: existingUser._id,
-        attempted: trimmedPhoneNumber,
-        match: existingUser.phoneNumber === trimmedPhoneNumber
-      });
-      
-      // Also check all users to help debug
-      const allUsers = await User.find({}).select('phoneNumber name');
-      console.log('All existing phone numbers:', allUsers.map(u => ({ phone: u.phoneNumber, name: u.name })));
-      
       return NextResponse.json(
         { success: false, error: `Phone number "${trimmedPhoneNumber}" already exists` },
         { status: 409 }
       );
     }
-    
-    console.log('Phone number is unique, proceeding with user creation');
 
     if (!['general', 'manager', 'super'].includes(role)) {
       return NextResponse.json(
@@ -152,41 +136,33 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       });
       
       if (usersWithNullPhone.length > 0) {
-        console.log(`Found ${usersWithNullPhone.length} users with null/empty phoneNumber. Cleaning up...`);
         await User.deleteMany({ 
           $or: [{ phoneNumber: null }, { phoneNumber: '' }, { phoneNumber: { $exists: false } }] 
         });
-        console.log('Cleaned up users with null phoneNumber.');
       }
     } catch (cleanupError) {
-      console.log('Cleanup check failed (this is okay):', cleanupError);
       // Continue even if cleanup fails
     }
 
     // Try to drop old conflicting indexes if they exist
     try {
       const indexes = await User.collection.getIndexes();
-      console.log('Current indexes:', Object.keys(indexes));
       
       // Drop phone_1 index if it exists (old index from previous schema)
       if (indexes.phone_1) {
-        console.log('Found old phone_1 index, attempting to drop it...');
         try {
           await User.collection.dropIndex('phone_1');
-          console.log('Successfully dropped old phone_1 index.');
-        } catch (dropError: any) {
-          console.log('Could not drop phone_1 index (may not exist or may be in use):', dropError.message);
+        } catch {
+          // Index may not exist or may be in use, continue
         }
       }
       
       // Drop assignedMonth_1 index if it exists (old index from previous schema)
       if (indexes.assignedMonth_1) {
-        console.log('Found old assignedMonth_1 index, attempting to drop it...');
         try {
           await User.collection.dropIndex('assignedMonth_1');
-          console.log('Successfully dropped old assignedMonth_1 index.');
-        } catch (dropError: any) {
-          console.log('Could not drop assignedMonth_1 index (may not exist or may be in use):', dropError.message);
+        } catch {
+          // Index may not exist or may be in use, continue
         }
       }
       
@@ -194,17 +170,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       for (const indexName of Object.keys(indexes)) {
         if ((indexName.includes('phone') && indexName !== 'phoneNumber_1') || 
             (indexName.includes('assignedMonth') && !indexName.includes('assignedMonths'))) {
-          console.log(`Found old index ${indexName}, attempting to drop it...`);
           try {
             await User.collection.dropIndex(indexName);
-            console.log(`Successfully dropped index ${indexName}.`);
-          } catch (dropError: any) {
-            console.log(`Could not drop index ${indexName}:`, dropError.message);
+          } catch {
+            // Index may not exist or may be in use, continue
           }
         }
       }
-    } catch (indexError) {
-      console.log('Index check failed (this is okay):', indexError);
+    } catch {
       // Continue even if index operations fail
     }
 
@@ -222,12 +195,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }
 
     // Only set assignedMonths if role is manager and it's provided
-    // Support migration: if assignedMonth (old) is provided, convert to array
     if (role === 'manager') {
       if (assignedMonths && Array.isArray(assignedMonths) && assignedMonths.length > 0) {
         userData.assignedMonths = assignedMonths;
       } else if (assignedMonth && typeof assignedMonth === 'string' && assignedMonth.trim() !== '') {
-        // Legacy support: convert single month to array
         userData.assignedMonths = [assignedMonth.trim()];
       } else {
         // This should not happen due to validation above, but fail gracefully
@@ -262,33 +233,23 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       delete userData.assignedMonths;
     }
 
-    console.log('Creating user with data:', { ...userData, password: '[HIDDEN]' });
-    
     let user;
     try {
       user = await User.create(userData);
-      console.log('User created successfully:', user._id);
     } catch (createError: any) {
       // Handle validation errors for assignedMonth (old field name)
       if (createError.message?.includes('assignedMonth') && !createError.message?.includes('assignedMonths')) {
-        console.log('Validation error for old assignedMonth field detected. This might be due to cached schema.');
-        console.log('Error details:', createError.errors);
-        
         // Try to drop the old index and retry
         try {
           const indexes = await User.collection.getIndexes();
           if (indexes.assignedMonth_1) {
-            console.log('Dropping old assignedMonth_1 index...');
             await User.collection.dropIndex('assignedMonth_1');
-            console.log('Successfully dropped assignedMonth_1 index. Retrying user creation...');
             // Retry creating the user
             user = await User.create(userData);
-            console.log('User created successfully after dropping old index:', user._id);
           } else {
             throw createError; // Re-throw if we can't fix it
           }
         } catch (retryError: any) {
-          console.error('Retry after dropping old index failed:', retryError);
           // Return a more helpful error message
           return NextResponse.json(
             { success: false, error: 'Managers must have at least one assigned month. Please ensure assignedMonths array is provided.' },
@@ -298,16 +259,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }
       // Handle duplicate key errors more gracefully
       else if (createError.code === 11000 || createError.message?.includes('duplicate key')) {
-        console.log('Duplicate key error detected. Error details:', {
-          code: createError.code,
-          keyPattern: createError.keyPattern,
-          keyValue: createError.keyValue,
-          message: createError.message
-        });
-        
         // If it's the phone_1 index issue, try to drop it and retry
         if (createError.keyPattern?.phone || createError.message?.includes('phone_1')) {
-          console.log('Attempting to fix phone_1 index issue...');
           try {
             await User.collection.dropIndex('phone_1').catch(() => {});
             // Clean up null phoneNumber users again
@@ -316,9 +269,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
             });
             // Retry creating the user
             user = await User.create(userData);
-            console.log('User created successfully after fixing index issue:', user._id);
           } catch (retryError: any) {
-            console.error('Retry after index fix failed:', retryError);
             throw createError; // Throw original error
           }
         } else {
@@ -392,7 +343,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiRespons
     }
 
     const body: UpdateUserRoleRequest = await request.json();
-    const { userId, role, assignedMonths, assignedMonth, password, isActive, phoneNumber, name } = body; // Support migration
+    const { userId, role, assignedMonths, assignedMonth, password, isActive, phoneNumber, name } = body;
 
     if (!userId) {
       return NextResponse.json(
@@ -430,7 +381,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiRespons
       }
 
       // Managers must have at least one assigned month
-      let monthsToAssign = assignedMonths || (assignedMonth ? [assignedMonth] : undefined); // Support migration
+      let monthsToAssign = assignedMonths || (assignedMonth ? [assignedMonth] : undefined);
       
       // If changing TO manager role without providing months, use existing months if user was already a manager
       if (role === 'manager' && (!monthsToAssign || !Array.isArray(monthsToAssign) || monthsToAssign.length === 0)) {
@@ -471,7 +422,6 @@ export async function PUT(request: NextRequest): Promise<NextResponse<ApiRespons
       if (Array.isArray(assignedMonths) && assignedMonths.length > 0) {
         user.assignedMonths = assignedMonths;
       } else if (assignedMonth) {
-        // Legacy support: convert single month to array
         user.assignedMonths = [assignedMonth];
       } else {
         return NextResponse.json(

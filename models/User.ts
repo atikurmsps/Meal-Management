@@ -82,20 +82,5 @@ if (mongoose.models.User) {
 
 const UserModel = mongoose.model<IUser>('User', UserSchema);
 
-// Clean up any existing users with null/empty phoneNumber on model initialization
-// This helps prevent the duplicate key error
-if (mongoose.connection.readyState === 1) {
-  UserModel.find({ $or: [{ phoneNumber: null }, { phoneNumber: '' }] })
-    .then((usersWithNullPhone: any[]) => {
-      if (usersWithNullPhone.length > 0) {
-        console.log(`Found ${usersWithNullPhone.length} users with null/empty phoneNumber. These should be cleaned up.`);
-        // Optionally delete or update these users
-        // For now, we'll just log them
-      }
-    })
-    .catch(() => {
-      // Ignore errors during cleanup check
-    });
-}
 
 export default UserModel;

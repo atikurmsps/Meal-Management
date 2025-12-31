@@ -16,18 +16,7 @@ function MemberProfileContent() {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
-    // Debug logging
-    useEffect(() => {
-        console.log('MemberProfileContent mounted');
-        console.log('params:', params);
-        console.log('memberId:', memberId);
-        console.log('searchParams:', searchParams?.toString());
-    }, [params, memberId, searchParams]);
-
     const fetchData = useCallback(async () => {
-        console.log('MemberProfileContent - memberId:', memberId);
-        console.log('MemberProfileContent - params:', params);
-
         if (!memberId) {
             setError('Member ID not found in URL');
             setLoading(false);
@@ -38,8 +27,6 @@ function MemberProfileContent() {
         setError(null);
         try {
             const url = `/api/user/${memberId}?month=${month}`;
-            console.log('Fetching from URL:', url);
-
             const res = await fetch(url);
             const result: ApiResponse<MemberProfileData> = await res.json();
 

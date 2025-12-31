@@ -8,7 +8,6 @@ import { useState, useEffect, memo } from 'react';
 import { createPortal } from 'react-dom';
 import ConfirmModal from './ConfirmModal';
 import { useAuth } from '@/components/AuthProvider';
-import type { ConfirmModalProps } from '@/types';
 
 const navItems = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
