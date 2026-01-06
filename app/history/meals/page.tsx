@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Edit2 } from 'lucide-react';
 import AddMealModal from '@/components/AddMealModal';
+import EditMealModal from '@/components/EditMealModal';
 import ConfirmModal from '@/components/ConfirmModal';
 import { useAuth } from '@/components/AuthProvider';
 import { formatDate } from '@/lib/dateUtils';
@@ -24,6 +25,8 @@ export default function MealHistoryPage() {
     const [month, setMonth] = useState<string>('');
     const [selectedMember, setSelectedMember] = useState<string>('');
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+    const [editMeal, setEditMeal] = useState<Meal | null>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
     const [deleteConfirm, setDeleteConfirm] = useState<{ isOpen: boolean; id: string | null }>({ isOpen: false, id: null });
 
     const fetchMeals = useCallback(async () => {
@@ -106,6 +109,26 @@ export default function MealHistoryPage() {
         }
     };
 
+    const handleEdit = (meal: Meal) => {
+        setEditMeal(meal);
+        setIsEditModalOpen(true);
+    };
+
+    const handleUpdateMeal = async (data: { id: string; count: number }) => {
+        try {
+            await fetch('/api/meals', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: data.id, count: data.count }),
+            });
+            setIsEditModalOpen(false);
+            setEditMeal(null);
+            fetchMeals();
+        } catch (error) {
+            console.error('Error updating meal:', error);
+        }
+    };
+
     const handleDelete = async (id: string) => {
         try {
             await fetch(`/api/meals?id=${id}`, {
@@ -169,8 +192,15 @@ export default function MealHistoryPage() {
                                         <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 font-medium text-xs sm:text-sm">{typeof meal.memberId === 'object' && meal.memberId !== null ? (meal.memberId as any).name : 'Unknown'}</td>
                                         <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-right font-medium text-xs sm:text-sm">{meal.count.toFixed(1)}</td>
                                         <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
-                                            {canManageThisMonth(month) && (
+                                            {canManageThisMonth(meal.month || month) && (
                                                 <div className="flex items-center justify-center gap-2">
+                                                    <button
+                                                        onClick={() => handleEdit(meal)}
+                                                        className="rounded p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+                                                        title="Edit"
+                                                    >
+                                                        <Edit2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                                    </button>
                                                     <button
                                                         onClick={() => setDeleteConfirm({ isOpen: true, id: meal._id })}
                                                         className="rounded p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
@@ -195,6 +225,16 @@ export default function MealHistoryPage() {
                 members={members}
                 assignedMonths={user?.assignedMonths}
                 onSave={handleSaveMeal}
+            />
+
+            <EditMealModal
+                isOpen={isEditModalOpen}
+                onClose={() => {
+                    setIsEditModalOpen(false);
+                    setEditMeal(null);
+                }}
+                editData={editMeal}
+                onSave={handleUpdateMeal}
             />
 
             <ConfirmModal
