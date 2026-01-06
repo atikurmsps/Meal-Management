@@ -4,6 +4,7 @@ import Meal from '@/models/Meal';
 import Grocery from '@/models/Grocery';
 import Expense from '@/models/Expense';
 import Deposit from '@/models/Deposit';
+import mongoose from 'mongoose';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import type { MemberProfileData, MemberExpense, ApiResponse } from '@/types';
@@ -33,6 +34,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             return NextResponse.json({ success: false, error: 'User/Member not found' }, { status: 404 });
         }
 
+        // Convert memberId to ObjectId for aggregation queries
+        const memberObjectId = new mongoose.Types.ObjectId(memberId);
+
         // Get all data for calculations using aggregation and lean for better performance
         const [meals, groceries, deposits, expenses, mealTotals, groceryTotals, depositTotal, groceryTotal, mealTotal] = await Promise.all([
             Meal.find({ memberId, month }).select('date count').sort({ date: -1 }).lean(),
@@ -48,15 +52,15 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 { $group: { _id: null, total: { $sum: '$amount' } } }
             ]),
             Deposit.aggregate([
-                { $match: { memberId, month } },
+                { $match: { memberId: memberObjectId, month } },
                 { $group: { _id: null, total: { $sum: '$amount' } } }
             ]),
             Grocery.aggregate([
-                { $match: { doneBy: memberId, month } },
+                { $match: { doneBy: memberObjectId, month } },
                 { $group: { _id: null, total: { $sum: '$amount' } } }
             ]),
             Meal.aggregate([
-                { $match: { memberId, month } },
+                { $match: { memberId: memberObjectId, month } },
                 { $group: { _id: null, total: { $sum: '$count' } } }
             ])
         ]);

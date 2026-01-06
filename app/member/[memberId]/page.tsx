@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Wallet } from 'lucide-react';
 import { formatMonth, formatDate } from '@/lib/dateUtils';
@@ -9,17 +9,42 @@ import type { MemberProfileData, ApiResponse } from '@/types';
 
 function MemberProfileContent() {
     const params = useParams();
-    const searchParams = useSearchParams();
     const memberId = params?.memberId as string;
-    const [month, setMonth] = useState<string>(searchParams?.get?.('month') || new Date().toISOString().slice(0, 7));
+    const [month, setMonth] = useState<string>('');
     const [data, setData] = useState<MemberProfileData | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+
+    // Fetch current month from settings (same as sidebar)
+    useEffect(() => {
+        const fetchCurrentMonth = async () => {
+            try {
+                const res = await fetch('/api/settings');
+                const data = await res.json();
+                if (data.success && data.data.currentMonth) {
+                    setMonth(data.data.currentMonth);
+                } else {
+                    // Fallback to current month if settings not found
+                    setMonth(new Date().toISOString().slice(0, 7));
+                }
+            } catch (error) {
+                console.error('Error fetching current month:', error);
+                // Fallback to current month on error
+                setMonth(new Date().toISOString().slice(0, 7));
+            }
+        };
+        fetchCurrentMonth();
+    }, []);
 
     const fetchData = useCallback(async () => {
         if (!memberId) {
             setError('Member ID not found in URL');
             setLoading(false);
+            return;
+        }
+
+        if (!month) {
+            // Wait for month to be loaded
             return;
         }
 
@@ -78,7 +103,7 @@ function MemberProfileContent() {
     return (
         <div className="space-y-4 sm:space-y-6 lg:space-y-8">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-0">
                 <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
                     <Link href="/" className="inline-flex items-center justify-center w-10 h-10 rounded-lg hover:bg-muted transition-colors flex-shrink-0">
                         <ArrowLeft className="h-5 w-5 text-muted-foreground" />
@@ -95,12 +120,6 @@ function MemberProfileContent() {
                         </div>
                     </div>
                 </div>
-                <input
-                    type="month"
-                    value={month}
-                    onChange={(e) => setMonth(e.target.value)}
-                    className="rounded-lg border border-border bg-background px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-foreground focus:border-primary focus:ring-0 w-full sm:w-auto"
-                />
             </div>
 
             {/* Summary Cards - 2 columns on mobile */}

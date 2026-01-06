@@ -16,7 +16,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<ApiRespons
         // Month is optional - if not provided, return all expenses
         if (month) {
             query.month = month;
-        }
+    }
         const expenses = await Expense.find(query)
             .populate('paidBy', 'name')
             .populate('splitAmong', 'name')
@@ -123,7 +123,7 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<ApiResp
         if (!expense || !expense.month) {
             return NextResponse.json({ success: false, error: 'Expense not found' }, { status: 404 });
         }
-        
+
         // Check if user can manage this month
         if (!canUserManageMonth(currentUser, expense.month)) {
             return NextResponse.json({ success: false, error: 'You do not have permission to manage data for this month' }, { status: 403 });

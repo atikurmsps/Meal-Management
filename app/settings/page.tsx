@@ -262,20 +262,20 @@ export default function SettingsPage() {
 
             {/* User & Member Management - All users are members */}
             {permissions.canManageMembers ? (
-                <section className="rounded-lg border border-border bg-card p-6 shadow-sm">
+            <section className="rounded-lg border border-border bg-card p-6 shadow-sm">
                     <div className="flex items-center justify-between mb-4">
                         <div className="flex items-center gap-2">
                             <Users className="h-5 w-5 text-primary" />
                             <h2 className="text-xl font-semibold">Users & Members</h2>
                             <span className="text-sm text-muted-foreground">(All users are members)</span>
                         </div>
-                        <button
+                    <button
                             onClick={() => setShowAddUserModal(true)}
                             className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-                        >
+                    >
                             <UserPlus className="h-4 w-4" />
                             Add User
-                        </button>
+                    </button>
                     </div>
 
                 <div className="space-y-2">

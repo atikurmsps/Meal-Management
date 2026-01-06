@@ -118,7 +118,7 @@ export async function DELETE(request: NextRequest): Promise<NextResponse<ApiResp
         if (!deposit || !deposit.month) {
             return NextResponse.json({ success: false, error: 'Deposit not found' }, { status: 404 });
         }
-        
+
         // Check if user can manage this month
         if (!canUserManageMonth(currentUser, deposit.month)) {
             return NextResponse.json({ success: false, error: 'You do not have permission to manage data for this month' }, { status: 403 });
