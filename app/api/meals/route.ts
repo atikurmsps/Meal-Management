@@ -48,21 +48,38 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
             return NextResponse.json({ success: false, error: 'You do not have permission to manage data for this month' }, { status: 403 });
         }
 
+        // Validate required fields
+        if (!date) {
+            return NextResponse.json({ success: false, error: 'Date is required' }, { status: 400 });
+        }
+        if (!meals || !Array.isArray(meals) || meals.length === 0) {
+            return NextResponse.json({ success: false, error: 'At least one meal entry is required' }, { status: 400 });
+        }
+
+        // Convert date string to Date object for proper querying
+        const dateObj = new Date(date);
+        if (isNaN(dateObj.getTime())) {
+            return NextResponse.json({ success: false, error: 'Invalid date format' }, { status: 400 });
+        }
+
         // meals is an array of { memberId, count }
         // We should delete existing meals for this date and member if count is 0? 
         // Or just upsert?
         // Strategy: Loop through meals and upsert.
 
         const operations = meals.map(async (meal: { memberId: string; count: number }) => {
+            if (!meal.memberId) {
+                throw new Error('Member ID is required for each meal entry');
+            }
             if (meal.count > 0) {
                 return Meal.findOneAndUpdate(
-                    { date: date, memberId: meal.memberId },
-                    { count: meal.count, month: month },
-                    { upsert: true, new: true }
+                    { date: dateObj, memberId: meal.memberId },
+                    { date: dateObj, count: meal.count, month: month },
+                    { upsert: true, new: true, runValidators: true }
                 );
             } else {
                 // If count is 0, remove the entry if it exists
-                return Meal.findOneAndDelete({ date: date, memberId: meal.memberId });
+                return Meal.findOneAndDelete({ date: dateObj, memberId: meal.memberId });
             }
         });
 

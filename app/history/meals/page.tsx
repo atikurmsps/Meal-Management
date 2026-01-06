@@ -97,15 +97,20 @@ export default function MealHistoryPage() {
         try {
             // Extract month from the date (YYYY-MM-DD -> YYYY-MM)
             const monthFromDate = mealData.date.slice(0, 7);
-            await fetch('/api/meals', {
+            const res = await fetch('/api/meals', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...mealData, month: monthFromDate }),
             });
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                throw new Error(data.error || 'Failed to save meal');
+            }
             setIsModalOpen(false);
             fetchMeals();
         } catch (error) {
             console.error('Error saving meal:', error);
+            alert(error instanceof Error ? error.message : 'Failed to save meal. Please try again.');
         }
     };
 
@@ -116,16 +121,21 @@ export default function MealHistoryPage() {
 
     const handleUpdateMeal = async (data: { id: string; count: number }) => {
         try {
-            await fetch('/api/meals', {
+            const res = await fetch('/api/meals', {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id: data.id, count: data.count }),
             });
+            const responseData = await res.json();
+            if (!res.ok || !responseData.success) {
+                throw new Error(responseData.error || 'Failed to update meal');
+            }
             setIsEditModalOpen(false);
             setEditMeal(null);
             fetchMeals();
         } catch (error) {
             console.error('Error updating meal:', error);
+            alert(error instanceof Error ? error.message : 'Failed to update meal. Please try again.');
         }
     };
 
